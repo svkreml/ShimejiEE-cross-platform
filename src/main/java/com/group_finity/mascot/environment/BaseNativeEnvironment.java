@@ -102,7 +102,7 @@ public abstract class BaseNativeEnvironment implements NativeEnvironment {
             screenAreas.add(screenArea);
         }
 
-        Rectangle primary = screenAreas.size() > 0
+        Rectangle primary = !screenAreas.isEmpty()
                 ? screenAreas.get(0).toRectangle()
                 : new Rectangle();
 

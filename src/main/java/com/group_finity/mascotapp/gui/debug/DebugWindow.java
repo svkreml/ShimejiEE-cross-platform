@@ -202,6 +202,7 @@ public class DebugWindow extends javax.swing.JFrame implements DebugUi {
                                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
+
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
@@ -209,6 +210,9 @@ public class DebugWindow extends javax.swing.JFrame implements DebugUi {
     public void update(Mascot mascot) {
         var bv = mascot.getBehavior();
         String bvName = bv != null ? bv.toString().substring(9, bv.toString().length() - 1) : null;
+
+        setWindowTitle(mascot.getImageSet() +" "+ mascot.id);
+        setTitle(mascot.getImageSet() +" "+ mascot.id);
 
         setBehaviorName(bvName);
         setMascotAnchor(mascot.getAnchor());

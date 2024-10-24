@@ -80,6 +80,8 @@ public class Constants {
             NATIVE_PKG_DEFAULT = "win";
         } else if (os.startsWith("mac") || os.startsWith("darwin")) {
             NATIVE_PKG_DEFAULT = "macjni";
+        } else if (os.startsWith("linux")) {
+            NATIVE_PKG_DEFAULT = "x11";
         } else {
             NATIVE_PKG_DEFAULT = "generic";
         }
