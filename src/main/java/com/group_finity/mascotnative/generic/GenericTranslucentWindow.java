@@ -1,17 +1,16 @@
 package com.group_finity.mascotnative.generic;
 
+import com.group_finity.mascot.image.NativeImage;
 import com.group_finity.mascotnative.shared.BaseTranslucentSwingWindow;
 import com.sun.jna.platform.WindowUtils;
 
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Graphics;
+import javax.swing.*;
+import java.awt.*;
 
 class GenericTranslucentWindow extends BaseTranslucentSwingWindow<GenericNativeImage> {
 
     private static final Color CLEAR = new Color(0, 0, 0, 0);
+    private NativeImage prevImage = null;
 
     @Override
     protected void setUp() {
@@ -40,9 +39,12 @@ class GenericTranslucentWindow extends BaseTranslucentSwingWindow<GenericNativeI
     }
 
     public void updateImage() {
-        WindowUtils.setWindowMask(this, getImage().getIcon());
-        validate();
-        this.repaint();
+        if (getImage() != prevImage) {
+            WindowUtils.setWindowMask(this, getImage().getIcon());
+            validate();
+            this.repaint();
+            prevImage = getImage();
+        }
     }
 
 }

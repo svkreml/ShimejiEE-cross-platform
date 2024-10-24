@@ -4,6 +4,7 @@ import com.group_finity.mascot.Mascot;
 import com.group_finity.mascot.NativeFactory;
 import com.group_finity.mascot.exception.CantBeAliveException;
 
+import javax.swing.*;
 import java.awt.Point;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.*;
@@ -13,13 +14,12 @@ public class DefaultManager implements MascotManager {
 
     public static final int TICK_INTERVAL_MILLIS = 40;
 
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final ConcurrentLinkedDeque<Runnable> tasks = new ConcurrentLinkedDeque<>();
 
     private final ConcurrentMap<Integer, Mascot> mascots = new ConcurrentSkipListMap<>();
 
-    public ScheduledFuture<?> start() throws ExecutionException, InterruptedException {
-        return scheduler.scheduleAtFixedRate(this::tick, 0, TICK_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+    public Timer start() throws ExecutionException, InterruptedException {
+        return new Timer(TICK_INTERVAL_MILLIS, (listener) -> tick());
     }
 
     private void tick() {
