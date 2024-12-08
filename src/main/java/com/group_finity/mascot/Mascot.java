@@ -104,9 +104,9 @@ public class Mascot
     private boolean animating = true;
 
     private boolean paused = false;
-    
+
     /**
-     * Set by behaviours when the shimeji is being dragged by the mouse cursor, 
+     * Set by behaviours when the shimeji is being dragged by the mouse cursor,
      * as opposed to hotspots or the like.
      */
     private boolean dragging = false;
@@ -114,16 +114,16 @@ public class Mascot
     private MascotEnvironment environment = new MascotEnvironment( this );
 
     private String sound = null;
-    
+
     protected DebugWindow debugWindow = null;
-    
+
     private ArrayList<String> affordances = new ArrayList( 5 );
-    
+
     private ArrayList<Hotspot> hotspots = new ArrayList( 5 );
-    
+
     /**
-     * Set by behaviours when the user has triggered a hotspot on this shimeji, 
-     * so that the shimeji knows to check for any new hotspots that emerge while 
+     * Set by behaviours when the user has triggered a hotspot on this shimeji,
+     * so that the shimeji knows to check for any new hotspots that emerge while
      * the mouse is held down.
      */
     private Point cursor = null;
@@ -211,16 +211,9 @@ public class Mascot
 
     private void mouseReleased(final MouseEvent event)
     {
-        if( event.isPopupTrigger( ) )
+        if( SwingUtilities.isRightMouseButton(event) )
         {
-            SwingUtilities.invokeLater( new Runnable( )
-            {
-                @Override
-                public void run( )
-                {
-                    showPopup( event.getX( ), event.getY( ) );
-                }
-            } );
+            SwingUtilities.invokeLater(() -> showPopup( event.getX( ), event.getY( ) ));
         }
         else
         {
@@ -339,7 +332,7 @@ public class Mascot
 				debugWindow.setVisible( true );
             }
         } );
-        
+
         // "Bye Everyone!" menu item
         final JMenuItem closeMenu = new JMenuItem( languageBundle.getString( "DismissAll" ) );
         closeMenu.addActionListener( new ActionListener( )
@@ -379,8 +372,8 @@ public class Mascot
                     String caption = behaviorName.replaceAll( "([a-z])(IE)?([A-Z])", "$1 $2 $3" ).replaceAll( "  ", " " );
                     if( config.isBehaviorEnabled( command, Mascot.this ) && !command.contains( "/" ) )
                     {
-                        item = new JMenuItem( languageBundle.containsKey( behaviorName ) ? 
-                                              languageBundle.getString( behaviorName ) : 
+                        item = new JMenuItem( languageBundle.containsKey( behaviorName ) ?
+                                              languageBundle.getString( behaviorName ) :
                                               caption );
                         item.addActionListener( new ActionListener( )
                         {
@@ -388,7 +381,7 @@ public class Mascot
                             public void actionPerformed( final ActionEvent e )
                             {
                                 try
-                                {	
+                                {
                                     setBehavior( config.buildBehavior( command ) );
                                 }
                                 catch( Exception err )
@@ -400,7 +393,7 @@ public class Mascot
                         } );
                         submenu.add( item );
                     }
-                    
+
                     if( config.isBehaviorToggleable( command ) && !command.contains( "/" ) )
                     {
                         toggleItem = new JCheckBoxMenuItem( caption, config.isBehaviorEnabled( command, Mascot.this ) );
@@ -440,7 +433,7 @@ public class Mascot
         popup.add( closeMenu );
 
         getWindow( ).asComponent( ).requestFocus( );
-                
+
         // lightweight popups expect the shimeji window to draw them if they fall inside the shimeji window boundary
         // as the shimeji window can't support this we need to set them to heavyweight
         popup.setLightWeightPopupEnabled( false );
@@ -466,20 +459,20 @@ public class Mascot
 
                 setTime( getTime( ) + 1 );
             }
-            
+
             if( debugWindow != null )
             {
                 debugWindow.setBehaviour( behavior.toString( ).substring( 9, behavior.toString( ).length( ) - 1 ).replaceAll( "([a-z])(IE)?([A-Z])", "$1 $2 $3" ).replaceAll( "  ", " " ) );
                 debugWindow.setShimejiX( anchor.x );
                 debugWindow.setShimejiY( anchor.y );
-                
+
                 Area activeWindow = environment.getActiveIE( );
                 debugWindow.setWindowTitle( environment.getActiveIETitle( ) );
                 debugWindow.setWindowX( activeWindow.getLeft( ) );
                 debugWindow.setWindowY( activeWindow.getTop( ) );
                 debugWindow.setWindowWidth( activeWindow.getWidth( ) );
                 debugWindow.setWindowHeight( activeWindow.getHeight( ) );
-                
+
                 Area workArea = environment.getWorkArea( );
                 debugWindow.setEnvironmentX( workArea.getLeft( ) );
                 debugWindow.setEnvironmentY( workArea.getTop( ) );
@@ -518,7 +511,7 @@ public class Mascot
                     getWindow().asComponent().setVisible(false);
                 }
             }
-            
+
             // play sound if requested
             if( !Sounds.isMuted( ) && sound != null && Sounds.contains( sound ) )
             {
@@ -539,7 +532,7 @@ public class Mascot
     public void dispose( )
     {
         log.log( Level.INFO, "destroy mascot ({0})", this );
-        
+
         if( debugWindow != null )
         {
             debugWindow.setVisible( false );
@@ -554,13 +547,13 @@ public class Mascot
             getManager( ).remove( Mascot.this );
         }
     }
-        
+
     private void refreshCursor( Point position )
     {
         boolean useHand = false;
         for( final Hotspot hotspot : hotspots )
         {
-            if( hotspot.contains( this, position ) && 
+            if( hotspot.contains( this, position ) &&
                 Main.getInstance( ).getConfiguration( imageSet ).isBehaviorEnabled( hotspot.getBehaviour( ), this ) )
             {
                 useHand = true;
@@ -570,7 +563,7 @@ public class Mascot
 
         refreshCursor( useHand );
     }
-    
+
     private void refreshCursor( Boolean useHand )
     {
         getWindow( ).asComponent( ).setCursor( Cursor.getPredefinedCursor( useHand ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR ) );
@@ -695,7 +688,7 @@ public class Mascot
     {
 	return hotspots;
     }
-        
+
     public void setImageSet( final String set )
     {
         imageSet = set;
@@ -715,12 +708,12 @@ public class Mascot
     {
         sound = name;
     }
-    
+
     public boolean isPaused( )
     {
         return paused;
     }
-    
+
     public void setPaused( final boolean paused )
     {
         this.paused = paused;
@@ -740,7 +733,7 @@ public class Mascot
     {
         return cursor != null;
     }
-    
+
     public Point getCursorPosition( )
     {
         return cursor;
@@ -749,7 +742,7 @@ public class Mascot
     public void setCursorPosition( final Point point )
     {
         cursor = point;
-        
+
         if( point == null )
             refreshCursor( false );
         else

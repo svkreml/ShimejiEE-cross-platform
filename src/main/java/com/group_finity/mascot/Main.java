@@ -15,11 +15,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPopupMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JCheckBoxMenuItem;
+import javax.swing.*;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -51,12 +47,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import javax.swing.JDialog;
-import javax.swing.UIManager;
 
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -529,7 +520,7 @@ public class Main
                 @Override
                 public void mouseReleased( MouseEvent event )
                 {
-                    if( event.isPopupTrigger( ) )
+                    if(SwingUtilities.isRightMouseButton(event) )
                     {
                         // close the form if it's open
                         if( form != null )
