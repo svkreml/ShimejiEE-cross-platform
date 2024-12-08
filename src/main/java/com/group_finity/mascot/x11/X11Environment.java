@@ -75,14 +75,6 @@ public class X11Environment extends Environment {
     }
 
 
-    @Override
-    protected void updateIe(Area ieToUpdate) {
-        update();
-        ieToUpdate.setVisible(activeIE.isVisible());
-        ieToUpdate.set(activeIE.toRectangle());
-    }
-
-
     private void update() {
 
         try {
@@ -116,6 +108,10 @@ public class X11Environment extends Environment {
             final Area ie = getActiveIE();
             ie.set(r);
             ie.setVisible(true);
+
+
+            activeIE.setVisible(activeIE.isVisible());
+            activeIE.set(activeIE.toRectangle());
 
         } catch (X.X11Exception ignored) {
         }

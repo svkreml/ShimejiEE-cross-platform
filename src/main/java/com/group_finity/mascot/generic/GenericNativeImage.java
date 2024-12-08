@@ -25,17 +25,12 @@ class GenericNativeImage implements NativeImage{
 	 * Java Image object.
 	 */
 	private final BufferedImage managedImage;
-	
+
 	private final Icon icon;
 
 	public GenericNativeImage(final BufferedImage image) {
 		this.managedImage = image;
 		this.icon = new ImageIcon(image);
-	}
-
-	@Override
-	protected void finalize() throws Throwable {
-		super.finalize();
 	}
 
 	public void flush() {

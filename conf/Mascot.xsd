@@ -2,20 +2,20 @@
 <schema targetNamespace="http://www.group-finity.com/Mascot" elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.group-finity.com/Mascot">
 
     <element name="Mascot" type="tns:Mascot" />
-    
+
     <complexType name="Mascot">
     	<sequence>
     		<element name="ActionList" type="tns:ActionList" maxOccurs="unbounded" minOccurs="0" />
     		<element name="BehaviorList" type="tns:BehaviorList" maxOccurs="unbounded" minOccurs="0" />
     	</sequence>
     </complexType>
-    
+
     <complexType name="ActionList">
     	<choice maxOccurs="unbounded" minOccurs="0" >
     		<element name="Action" type="tns:TopAction" />
     	</choice>
     </complexType>
-    
+
     <complexType name="ActionArguments" abstract="true">
   		<attribute name="Condition" type="tns:Parameter" />
   		<attribute name="Duration" type="tns:Parameter" />
@@ -37,7 +37,7 @@
   		<attribute name="RegistanceY" type="tns:Parameter" />
    		<attribute name="Gravity" type="tns:Parameter" />
     </complexType>
-    
+
     <complexType name="Action">
 	    <complexContent>
 	    	<extension base="tns:ActionArguments">
@@ -55,6 +55,9 @@
 		    			<restriction base="string">
 		    				<enumeration value="Embedded"></enumeration>
 		    				<enumeration value="Move"></enumeration>
+		    				<enumeration value="Stay"></enumeration>
+		    				<enumeration value="Animate"></enumeration>
+		    				<enumeration value="Sequence"></enumeration>
 		    				<enumeration value="Pause"></enumeration>
 		    				<enumeration value="Fixed"></enumeration>
 		    				<enumeration value="Composite"></enumeration>
@@ -82,7 +85,7 @@
 	    	</extension>
 	    </complexContent>
     </complexType>
-    
+
     <complexType name="TopAction">
     	<complexContent>
     		<extension base="tns:Action">
@@ -90,20 +93,20 @@
     		</extension>
     	</complexContent>
     </complexType>
-    
+
     <complexType name="LowerAction">
     	<complexContent>
     		<extension base="tns:Action" />
     	</complexContent>
     </complexType>
-    
+
     <complexType name="Animation">
     	<sequence>
     		<element name="Pose" type="tns:Pose" maxOccurs="unbounded" minOccurs="1" />
     	</sequence>
     	<attribute name="Condition" type="string" />
     </complexType>
-    
+
     <complexType name="Pose">
    		<attribute name="Image" use="required">
    			<simpleType>
@@ -128,7 +131,7 @@
    		</attribute>
    		<attribute name="Duration" type="int" use="required" />
     </complexType>
-    
+
     <complexType name="ActionReference">
     	<complexContent>
  			<extension base="tns:ActionArguments">
@@ -150,6 +153,7 @@
 	    <sequence>
 	    	<choice maxOccurs="1" minOccurs="0" >
 		    	<element name="NextBehaviorList" type="tns:NextBehaviorList" />
+		    	<element name="NextBehavior" type="tns:NextBehaviorList" />
 	    	</choice>
 	    </sequence>
   		<attribute name="Name" type="string" use="required" />
@@ -157,7 +161,7 @@
   		<attribute name="Condition" type="tns:Parameter" />
   		<attribute name="Hidden" type="boolean" />
     </complexType>
-    
+
     <complexType name="NextBehaviorList">
 	    <sequence>
 	    	<choice maxOccurs="unbounded" minOccurs="1" >
@@ -166,8 +170,9 @@
 	    	</choice>
 	    </sequence>
 	    <attribute name="Add" type="boolean" use="required" />
+
     </complexType>
-    
+
     <complexType name="BehaviorReferenceCondition">
     	<complexContent>
     		<extension base="tns:NextBehaviorList">
@@ -175,13 +180,14 @@
     		</extension>
     	</complexContent>
     </complexType>
-    
+
     <complexType name="BehaviorReference">
   		<attribute name="Name" type="string" use="required" />
   		<attribute name="Frequency" type="int" use="required" />
   		<attribute name="Condition" type="tns:Parameter" />
+		<attribute name="Hidden" type="boolean" />
     </complexType>
-    
+
     <complexType name="BehaviorCondition">
     	<complexContent>
     		<extension base="tns:BehaviorList">
@@ -189,11 +195,11 @@
     		</extension>
     	</complexContent>
     </complexType>
-    
+
     <simpleType name="Parameter">
     	<restriction base="string">
-    		<pattern value="([$#]\{.+\})|(\-?[0-9]+(\.[0-9]+)?)|true|false" />
+    		<pattern value="([$#]\{.+\})|(\-?[0-9]+(\.[0-9]+)?)|true|false|PullUp|Divided" />
     	</restriction>
     </simpleType>
-    
+
 </schema>

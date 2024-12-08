@@ -1,6 +1,5 @@
 package com.group_finity.mascot.x11;
 
-import com.group_finity.mascot.generic.GenericNativeImage;
 import com.group_finity.mascot.image.NativeImage;
 import com.group_finity.mascot.image.TranslucentWindow;
 import com.sun.jna.platform.WindowUtils;
@@ -20,7 +19,7 @@ public class X11TranslucentWindow extends JWindow implements TranslucentWindow {
     /**
      * To view images.
      */
-    private GenericNativeImage image;
+    private X11NativeImage image;
 
     private JPanel panel;
     private float alpha = 1.0f;
@@ -83,12 +82,12 @@ public class X11TranslucentWindow extends JWindow implements TranslucentWindow {
         return "LayeredWindow[hashCode="+hashCode()+",bounds="+getBounds()+"]";
     }
 
-    public GenericNativeImage getImage() {
+    public X11NativeImage getImage() {
         return this.image;
     }
 
     public void setImage(final NativeImage image) {
-        this.image = (GenericNativeImage)image;
+        this.image = (X11NativeImage)image;
     }
 
     public void updateImage() {
