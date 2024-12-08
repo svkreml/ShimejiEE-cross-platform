@@ -163,7 +163,7 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
             }
 
             // start
-            manager.start().get();
+            manager.start().start();
 
         } catch (Exception | Error error) {
             log.log(Level.SEVERE, error.getMessage(), error);

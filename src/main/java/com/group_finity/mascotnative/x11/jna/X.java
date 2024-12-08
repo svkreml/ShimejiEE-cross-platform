@@ -10,7 +10,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  */
-package com.group_finity.mascotnative.x11;
+package com.group_finity.mascotnative.x11.jna;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Native;

@@ -2,6 +2,7 @@ package com.group_finity.mascotnative.x11;
 
 import com.group_finity.mascot.environment.Area;
 import com.group_finity.mascot.environment.BaseNativeEnvironment;
+import com.group_finity.mascotnative.x11.jna.X;
 
 import java.awt.*;
 import java.util.ArrayList;

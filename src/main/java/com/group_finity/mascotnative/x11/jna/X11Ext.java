@@ -1,4 +1,4 @@
-package com.group_finity.mascotnative.x11;
+package com.group_finity.mascotnative.x11.jna;
 
 import com.sun.jna.Library;
 import com.sun.jna.platform.unix.X11;
