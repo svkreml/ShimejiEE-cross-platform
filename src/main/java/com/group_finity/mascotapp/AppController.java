@@ -1,11 +1,13 @@
 package com.group_finity.mascotapp;
 
 import com.group_finity.mascot.*;
-import com.group_finity.mascot.config.DefaultPoseLoader;
 import com.group_finity.mascot.config.XmlConfiguration;
+import com.group_finity.mascot.config.DefaultPoseLoader;
 import com.group_finity.mascot.exception.ConfigurationException;
 import com.group_finity.mascot.image.ImagePairLoaderBuilder;
-import com.group_finity.mascot.imageset.*;
+import com.group_finity.mascot.imageset.ImageSet;
+import com.group_finity.mascot.imageset.ShimejiProgramFolder;
+import com.group_finity.mascot.imageset.ShimejiImageSet;
 import com.group_finity.mascot.manager.DefaultManager;
 import com.group_finity.mascot.sound.SoundLoader;
 import com.group_finity.mascot.window.contextmenu.MenuItemRep;
@@ -13,18 +15,34 @@ import com.group_finity.mascot.window.contextmenu.MenuRep;
 import com.group_finity.mascot.window.contextmenu.TopLevelMenuRep;
 import com.group_finity.mascotapp.gui.chooser.ImageSetChooserUtils;
 import com.group_finity.mascotapp.gui.debug.DebugWindow;
+import com.group_finity.mascot.imageset.ImageSetManager;
+import com.group_finity.mascot.imageset.ImageSetSelectionDelegate;
 import org.xml.sax.SAXException;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.xml.parsers.ParserConfigurationException;
-import java.awt.*;
+import java.awt.CheckboxMenuItem;
+import java.awt.Image;
+import java.awt.Menu;
+import java.awt.MenuItem;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
-import java.util.*;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -39,18 +57,19 @@ import static java.util.Map.entry;
  * manages/responds to user actions such as changing settings
  */
 public final class AppController implements Runnable, MascotPrefProvider, ImageSetSelectionDelegate {
+    private static final Logger log = Logger.getLogger(AppController.class.getName());
+
     // Action that matches the followCursor action
     static final String BEHAVIOR_GATHER = "ChaseMouse";
-    private static final Logger log = Logger.getLogger(AppController.class.getName());
+
     private static final String USER_BEHAVIORNAMES_FILE = "user-behaviornames.properties";
 
     private static final Path SETTINGS_PATH;
-    private static final JFrame frame = new JFrame();
 
     static {
         System.setProperty("java.util.PropertyResourceBundle.encoding", "UTF-8");
 
-        final var logPropsPath = Constants.JAR_DIR.resolve(Path.of("conf", "logging.properties"));
+        final var logPropsPath = Constants.JAR_DIR.resolve(Path.of("conf","logging.properties"));
         try (var ins = new FileInputStream(logPropsPath.toFile())) {
             LogManager.getLogManager().readConfiguration(ins);
         } catch (final SecurityException | IOException e) {
@@ -60,57 +79,18 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
         String settingsPathProp = System.getProperty(Constants.PREF_PROP_PREFIX + "SettingsPath");
         SETTINGS_PATH = settingsPathProp != null
                 ? Path.of(settingsPathProp)
-                : Constants.JAR_DIR.resolve(Path.of("conf", "settings.properties"));
+                : Constants.JAR_DIR.resolve(Path.of("conf","settings.properties"));
     }
 
-    private final Map<String, Boolean> userSwitches = new ConcurrentHashMap<>(16, 0.75f, 2);
-    private final Map<String, String> imageSetDefaults = new ConcurrentHashMap<>(8, 0.75f, 2);
-    private final DefaultManager manager = new DefaultManager();
     //--------//
     private ShimejiProgramFolder programFolder = ShimejiProgramFolder.fromFolder(Constants.JAR_DIR);
-    private final ImageSetManager imageSets = new ImageSetManager(this::loadImageSet, this);
-    private final Map<String, Runnable> mainMenuActions = Map.ofEntries(
-            entry("CallShimeji", this::createMascot),
-            entry("FollowCursor", () -> manager.trySetBehaviorAll(BEHAVIOR_GATHER)),
-            entry("ReduceToOne", manager::reduceToOne),
-            entry("RestoreWindows", () -> NativeFactory.getInstance().getEnvironment().restoreIE()),
-            entry("ChooseShimeji", this::showImageSetChooser),
-            entry("ReloadMascots", this::reloadImageSets),
-            entry("DismissAll", manager::disposeAll),
-            entry("Quit", () -> System.exit(0))
-    );
+
     private Locale locale = Locale.ENGLISH;
+    private final Map<String, Boolean> userSwitches = new ConcurrentHashMap<>(16, 0.75f, 2);
+    private final Map<String, String> imageSetDefaults = new ConcurrentHashMap<>(8, 0.75f, 2);
 
-    static void showError(String message) {
-        JOptionPane.showMessageDialog(frame, message, "Error", JOptionPane.ERROR_MESSAGE);
-    }
-
-    private static ImageSet loadImageSetFrom(ShimejiProgramFolder pf, String name, Map<String, String> prefs) throws ParserConfigurationException, IOException, SAXException, ConfigurationException {
-        double scale = 1.0;
-        try {
-            scale = Double.parseDouble(prefs.getOrDefault("Scaling", 1.0 + ""));
-            scale = scale > 0.0 ? scale : 1.0;
-        } catch (Exception ignored) {
-        }
-
-        var imgLoader = new ImagePairLoaderBuilder()
-                .setScaling(scale)
-                .setLogicalAnchors(Boolean.parseBoolean(prefs.getOrDefault("LogicalAnchors", false + "")))
-                .setAsymmetryNameScheme(Boolean.parseBoolean(prefs.getOrDefault("AsymmetryNameScheme", false + "")))
-                .setPixelArtScaling(Boolean.parseBoolean(prefs.getOrDefault("PixelArtScaling", false + "")))
-                .buildForBasePath(pf.imgPath().resolve(name));
-
-        SoundLoader soundLoader = new SoundLoader(pf, name);
-        soundLoader.setFixRelativeGlobalSound(Boolean.parseBoolean(prefs.getOrDefault("FixRelativeGlobalSound", false + "")));
-
-        Path actionsPath = pf.getActionConfPath(name);
-        Path behaviorPath = pf.getBehaviorConfPath(name);
-
-        var poseLoader = new DefaultPoseLoader(imgLoader, soundLoader);
-        var conf = XmlConfiguration.loadUsing(poseLoader, actionsPath, behaviorPath);
-
-        return new ShimejiImageSet(conf, imgLoader, soundLoader);
-    }
+    private final DefaultManager manager = new DefaultManager();
+    private final ImageSetManager imageSets = new ImageSetManager(this::loadImageSet, this);
 
     private void setLocale(Locale newLocale) {
         if (!locale.equals(newLocale)) {
@@ -124,84 +104,34 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
         }
     }
 
-    @Override
-    public boolean isBreedingAllowed() {
-        return userSwitches.getOrDefault("Breeding", true);
-    }
+    @Override public boolean isBreedingAllowed() {return userSwitches.getOrDefault("Breeding", true);}
+    private void setBreedingAllowed(boolean allowed) {userSwitches.put("Breeding", allowed);}
 
-    private void setBreedingAllowed(boolean allowed) {
-        userSwitches.put("Breeding", allowed);
-    }
+    @Override public boolean isTransientBreedingAllowed() {return userSwitches.getOrDefault("Transients", true);}
+    private void setTransientBreedingAllowed(boolean allowed) {userSwitches.put("Transients", allowed);}
 
-    @Override
-    public boolean isTransientBreedingAllowed() {
-        return userSwitches.getOrDefault("Transients", true);
-    }
+    @Override public boolean isTransformationAllowed() {return userSwitches.getOrDefault("Transformation", true);}
+    private void setTransformationAllowed(boolean allowed) {userSwitches.put("Transformation", allowed);}
 
-    private void setTransientBreedingAllowed(boolean allowed) {
-        userSwitches.put("Transients", allowed);
-    }
+    @Override public boolean isIEMovementAllowed() {return userSwitches.getOrDefault("Throwing", true);}
+    private void setIEMovementAllowed(boolean allowed) {userSwitches.put("Throwing", allowed);}
 
-    @Override
-    public boolean isTransformationAllowed() {
-        return userSwitches.getOrDefault("Transformation", true);
-    }
-
-    private void setTransformationAllowed(boolean allowed) {
-        userSwitches.put("Transformation", allowed);
-    }
-
-    @Override
-    public boolean isIEMovementAllowed() {
-        return userSwitches.getOrDefault("Throwing", true);
-    }
-
-    private void setIEMovementAllowed(boolean allowed) {
-        userSwitches.put("Throwing", allowed);
-    }
-
-    @Override
-    public boolean isSoundAllowed() {
-        return userSwitches.getOrDefault("Sounds", true);
-    }
-
-    private void setSoundAllowed(boolean allowed) {
-        userSwitches.put("Sounds", allowed);
-    }
+    @Override public boolean isSoundAllowed() {return userSwitches.getOrDefault("Sounds", true);}
+    private void setSoundAllowed(boolean allowed) {userSwitches.put("Sounds", allowed);}
 
     //----
-    private boolean shouldTranslateBehaviours() {
-        return userSwitches.getOrDefault("TranslateBehaviorNames", true);
-    }
+    private boolean shouldTranslateBehaviours() {return userSwitches.getOrDefault("TranslateBehaviorNames", true);}
+    private void setShouldTranslateBehaviors(boolean b) {userSwitches.put("TranslateBehaviorNames", b);}
 
-    private void setShouldTranslateBehaviors(boolean b) {
-        userSwitches.put("TranslateBehaviorNames", b);
-    }
+    private boolean shouldShowChooserAtStart() {return userSwitches.getOrDefault("AlwaysShowShimejiChooser", false);}
+    private void setShouldShowChooserAtStart(boolean b) {userSwitches.put("AlwaysShowShimejiChooser", b);}
+
+    private boolean shouldIgnoreImagesetProperties() {return userSwitches.getOrDefault("IgnoreImagesetProperties", false);}
+    private void setShouldIgnoreImagesetProperties(boolean b) {userSwitches.put("IgnoreImagesetProperties", b);}
 
     //----
 
-    private boolean shouldShowChooserAtStart() {
-        return userSwitches.getOrDefault("AlwaysShowShimejiChooser", false);
-    }
-
-    private void setShouldShowChooserAtStart(boolean b) {
-        userSwitches.put("AlwaysShowShimejiChooser", b);
-    }
-
-    private boolean shouldIgnoreImagesetProperties() {
-        return userSwitches.getOrDefault("IgnoreImagesetProperties", false);
-    }
-
-    private void setShouldIgnoreImagesetProperties(boolean b) {
-        userSwitches.put("IgnoreImagesetProperties", b);
-    }
-
-    private double getScaling() {
-        return Double.parseDouble(imageSetDefaults.getOrDefault("Scaling", "1"));
-    }
-
-    //--------imageSet management---------//
-
+    private double getScaling() {return Double.parseDouble(imageSetDefaults.getOrDefault("Scaling", "1"));}
     private void setScaling(double scaling) {
         imageSetDefaults.put("Scaling", scaling + "");
         reloadImageSets();
@@ -233,7 +163,7 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
             }
 
             // start
-            manager.start().start();
+            manager.start().get();
 
         } catch (Exception | Error error) {
             log.log(Level.SEVERE, error.getMessage(), error);
@@ -241,6 +171,14 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
             System.exit(0);
         }
     }
+
+    private static final JFrame frame = new JFrame();
+
+    static void showError(String message) {
+        JOptionPane.showMessageDialog(frame, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    //--------imageSet management---------//
 
     private void showImageSetChooser() {
         ImageSetChooserUtils.askUserForSelection(imageSets::setSelected, imageSets.getSelected(), programFolder);
@@ -271,7 +209,7 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
             log.log(Level.WARNING, "Unable to load image set", e);
             showError(e.getMessage());
         }
-        return null;
+        return  null;
     }
 
     /**
@@ -283,22 +221,13 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
         imageSets.setSelected(selection);
     }
 
-    @Override
-    public void imageSetHasBeenAdded(String name, ImageSet imageSet) {
-        createMascot(name);
-    }
-
-    @Override
-    public void dependencyHasBecomeSelection(String name, ImageSet imageSet) {
-        createMascot(name);
-    }
+    @Override public void imageSetHasBeenAdded(String name, ImageSet imageSet) { createMascot(name); }
+    @Override public void dependencyHasBecomeSelection(String name, ImageSet imageSet) { createMascot(name); }
 
     @Override
     public void imageSetWillBeRemoved(String name, ImageSet imageSet) {
         manager.disposeIf(m -> m.getImageSet().equals(name));
     }
-
-    //----------mascot creation-----------//
 
     @Override
     public void imageSetHasBeenRemoved(String name, ImageSet imageSet) {
@@ -310,6 +239,34 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
             }
         }
     }
+
+    private static ImageSet loadImageSetFrom(ShimejiProgramFolder pf, String name, Map<String, String> prefs) throws ParserConfigurationException, IOException, SAXException, ConfigurationException {
+        double scale = 1.0;
+        try {
+            scale = Double.parseDouble(prefs.getOrDefault("Scaling", 1.0 + ""));
+            scale = scale > 0.0 ? scale : 1.0;
+        } catch (Exception ignored) {}
+
+        var imgLoader = new ImagePairLoaderBuilder()
+                .setScaling(scale)
+                .setLogicalAnchors(Boolean.parseBoolean(prefs.getOrDefault("LogicalAnchors", false + "")))
+                .setAsymmetryNameScheme(Boolean.parseBoolean(prefs.getOrDefault("AsymmetryNameScheme", false + "")))
+                .setPixelArtScaling( Boolean.parseBoolean(prefs.getOrDefault("PixelArtScaling", false + "")))
+                .buildForBasePath(pf.imgPath().resolve(name));
+
+        SoundLoader soundLoader = new SoundLoader(pf, name);
+        soundLoader.setFixRelativeGlobalSound(Boolean.parseBoolean(prefs.getOrDefault("FixRelativeGlobalSound", false + "")));
+
+        Path actionsPath = pf.getActionConfPath(name);
+        Path behaviorPath = pf.getBehaviorConfPath(name);
+
+        var poseLoader = new DefaultPoseLoader(imgLoader, soundLoader);
+        var conf = XmlConfiguration.loadUsing(poseLoader, actionsPath, behaviorPath);
+
+        return new ShimejiImageSet(conf, imgLoader, soundLoader);
+    }
+
+    //----------mascot creation-----------//
 
     /**
      * Spawns a random mascot
@@ -355,15 +312,16 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
             log.log(Level.SEVERE, imageSet + " fatal error, can not be started.", e);
             AppController.showError(
                     Tr.tr("CouldNotCreateShimejiErrorMessage") + ": " + imageSet +
-                            ".\n" + e.getMessage()
-                            + "\n" + Tr.tr("SeeLogForDetails"));
+                    ".\n" + e.getMessage()
+                    + "\n" + Tr.tr("SeeLogForDetails"));
             mascot.dispose();
         }
     }
 
-    /// =======v This class ends here, everything below is meant to be easily deletable v========//
+///=======v This class ends here, everything below is meant to be easily deletable v========//
 
     //---------Setting storage/extraction------------//
+
     private void loadAllSettings(Path inputFilePath) {
         var props = Prefs.readProps(inputFilePath);
 
@@ -374,7 +332,7 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
             }
         }
 
-        for (String key : Constants.IMGSET_DEFAULTS_KEYS) {
+        for (String key: Constants.IMGSET_DEFAULTS_KEYS) {
             var s = Prefs.getSetting(props, key);
             if (s != null) {
                 imageSetDefaults.put(key, s);
@@ -393,7 +351,7 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
     private void writeAllSettings(Path outputFilePath) {
         Map<String, String> props = new HashMap<>();
 
-        userSwitches.forEach((k, v) -> props.put(k, v + ""));
+        userSwitches.forEach((k,v) -> props.put(k, v + ""));
         props.putAll(imageSetDefaults);
 
         if (getScaling() != 1.0) {
@@ -411,17 +369,28 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
         Prefs.writeProps(props, outputFilePath);
     }
 
-    private MenuItemRep repActionBtn(String title, String action, Mascot m) {
-        if (mascotActions.containsKey(action)) {
-            return new MenuItemRep(title, () -> mascotActions.get(action).accept(m));
-        }
-        if (mainMenuActions.containsKey(action)) {
-            return new MenuItemRep(title, mainMenuActions.get(action));
-        }
-        return new MenuItemRep(title, null, false);
-    }    private final Map<String, Consumer<Mascot>> mascotActions = Map.ofEntries(
+    private final Map<String, Runnable> mainMenuActions = Map.ofEntries(
+            entry("CallShimeji", this::createMascot),
+            entry("FollowCursor", () -> manager.trySetBehaviorAll(BEHAVIOR_GATHER)),
+            entry("ReduceToOne", manager::reduceToOne),
+            entry("RestoreWindows", () -> NativeFactory.getInstance().getEnvironment().restoreIE()),
+            entry("ChooseShimeji", this::showImageSetChooser),
+            entry("ReloadMascots", this::reloadImageSets),
+            entry("DismissAll", manager::disposeAll),
+            entry("Quit", () -> System.exit(0))
+    );
+
+    private final Map<String, Consumer<Mascot>> mascotActions = Map.ofEntries(
             entry("CallAnother", m -> createMascot(m.getImageSet())),
             entry("RevealStatistics", Mascot::startDebugUi),
+            entry("FollowCursor", m -> {
+                try {
+                    var conf = m.getOwnImageSet().getConfiguration();
+                    m.setBehavior(conf.buildBehavior(conf.getSchema().getString(BEHAVIOR_GATHER)));
+                } catch (Exception ignored) {
+                    // again, we're ignoring ChaseMouse not existing
+                }
+            }),
             entry("Dismiss", Mascot::dispose),
             entry("DismissOthers", m -> manager.disposeIf(mascot -> mascot.id != m.id && mascot.getImageSet().equals(m.getImageSet()))),
             entry("DismissAllOthers", m -> manager.disposeIf(mascot -> mascot.id != m.id))
@@ -430,6 +399,16 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
     //----------Menus------------//
 
     //---Console Menu
+
+    private MenuItemRep repActionBtn(String title, String action, Mascot m) {
+        if (mascotActions.containsKey(action)) {
+            return new MenuItemRep(title, () -> mascotActions.get(action).accept(m));
+        }
+        if (mainMenuActions.containsKey(action)) {
+            return new MenuItemRep(title, mainMenuActions.get(action));
+        }
+        return new MenuItemRep(title, null, false);
+    }
 
     private List<MenuItemRep> createBehaviourMenuItemsFor(Mascot m) {
         var conf = m.getOwnImageSet().getConfiguration();
@@ -448,7 +427,7 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
                         m.setBehavior(conf.buildBehavior(bvName));
                     } catch (Exception err) {
                         showError(Tr.tr("CouldNotSetBehaviourErrorMessage")
-                                + "\n" + err.getMessage());
+                                  + "\n" + err.getMessage());
                     }
                 }));
             } catch (Exception e) {
@@ -481,13 +460,13 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
         return rep;
     }
 
+    //---Tray Menu
+
     private MenuItem awtActionBtn(String title, String action) {
         final MenuItem btn = new MenuItem(title);
         btn.addActionListener(e -> mainMenuActions.get(action).run());
         return btn;
     }
-
-    //---Tray Menu
 
     private CheckboxMenuItem awtToggle(String text, BooleanSupplier getter, Consumer<Boolean> setter) {
         final var toggleBtn = new CheckboxMenuItem(text, getter.getAsBoolean());
@@ -564,10 +543,10 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
 
         imgTogglesMenu.add("-");
 
-        imgTogglesMenu.add(awtImgToggle(Tr.tr("LogicalAnchors"), "LogicalAnchors", false));
-        imgTogglesMenu.add(awtImgToggle(Tr.tr("AsymmetryNameScheme"), "AsymmetryNameScheme", false));
-        imgTogglesMenu.add(awtImgToggle(Tr.tr("PixelArtScaling"), "PixelArtScaling", false));
-        imgTogglesMenu.add(awtImgToggle(Tr.tr("FixRelativeGlobalSound"), "FixRelativeGlobalSound", false));
+        imgTogglesMenu.add(awtImgToggle(Tr.tr("LogicalAnchors"),"LogicalAnchors", false));
+        imgTogglesMenu.add(awtImgToggle(Tr.tr("AsymmetryNameScheme"),"AsymmetryNameScheme", false));
+        imgTogglesMenu.add(awtImgToggle(Tr.tr("PixelArtScaling"),"PixelArtScaling", false));
+        imgTogglesMenu.add(awtImgToggle(Tr.tr("FixRelativeGlobalSound"),"FixRelativeGlobalSound", false));
 
         //----------------------//
 
@@ -622,7 +601,5 @@ public final class AppController implements Runnable, MascotPrefProvider, ImageS
             System.exit(1);
         }
     }
-
-
 
 }
