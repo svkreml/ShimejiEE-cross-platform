@@ -31,6 +31,7 @@
   		<attribute name="Gap" type="tns:Parameter" />
   		<attribute name="BornX" type="tns:Parameter" />
   		<attribute name="BornY" type="tns:Parameter" />
+
   		<attribute name="BornBehavior" type="tns:Parameter" />
    		<attribute name="VelocityParam" type="tns:Parameter" />
    		<attribute name="RegistanceX" type="tns:Parameter" />
@@ -55,13 +56,13 @@
 		    			<restriction base="string">
 		    				<enumeration value="Embedded"></enumeration>
 		    				<enumeration value="Move"></enumeration>
-		    				<enumeration value="Stay"></enumeration>
-		    				<enumeration value="Animate"></enumeration>
-		    				<enumeration value="Sequence"></enumeration>
 		    				<enumeration value="Pause"></enumeration>
 		    				<enumeration value="Fixed"></enumeration>
 		    				<enumeration value="Composite"></enumeration>
 		    				<enumeration value="Select"></enumeration>
+		    				<enumeration value="Sequence"></enumeration>
+		    				<enumeration value="Stay"></enumeration>
+		    				<enumeration value="Animate"></enumeration>
 		    			</restriction>
 		    		</simpleType>
 		   		</attribute>
@@ -90,6 +91,9 @@
     	<complexContent>
     		<extension base="tns:Action">
 		    	<attribute name="Name" type="string" use="required" />
+		    	<attribute name="Affordance" type="string" />
+		    	<attribute name="Behavior" type="string" />
+		    	<attribute name="TargetBehavior" type="string" />
     		</extension>
     	</complexContent>
     </complexType>
@@ -103,12 +107,20 @@
     <complexType name="Animation">
     	<sequence>
     		<element name="Pose" type="tns:Pose" maxOccurs="unbounded" minOccurs="1" />
+    		<element name="Hotspot" type="tns:Hotspot" maxOccurs="unbounded" minOccurs="0" />
     	</sequence>
     	<attribute name="Condition" type="string" />
     </complexType>
 
     <complexType name="Pose">
    		<attribute name="Image" use="required">
+   			<simpleType>
+   				<restriction base="string">
+   					<pattern value=".+\.(png|gif|jpeg|jpg|bmp|PNG|GIF|JPEG|JPG|BMP)" />
+   				</restriction>
+   			</simpleType>
+   		</attribute>
+		<attribute name="ImageRight">
    			<simpleType>
    				<restriction base="string">
    					<pattern value=".+\.(png|gif|jpeg|jpg|bmp|PNG|GIF|JPEG|JPG|BMP)" />
@@ -132,6 +144,13 @@
    		<attribute name="Duration" type="int" use="required" />
     </complexType>
 
+	<complexType name="Hotspot">
+		<attribute name="Shape" type="string"  />
+		<attribute name="Origin" type="string"  />
+		<attribute name="Size" type="string"  />
+		<attribute name="Behavior" type="string"  />
+	</complexType>
+
     <complexType name="ActionReference">
     	<complexContent>
  			<extension base="tns:ActionArguments">
@@ -153,7 +172,6 @@
 	    <sequence>
 	    	<choice maxOccurs="1" minOccurs="0" >
 		    	<element name="NextBehaviorList" type="tns:NextBehaviorList" />
-		    	<element name="NextBehavior" type="tns:NextBehaviorList" />
 	    	</choice>
 	    </sequence>
   		<attribute name="Name" type="string" use="required" />
@@ -167,10 +185,10 @@
 	    	<choice maxOccurs="unbounded" minOccurs="1" >
 		    	<element name="BehaviorReference" type="tns:BehaviorReference" />
 		    	<element name="Condition" type="tns:BehaviorReferenceCondition" />
+		    	<element name="Behavior" type="tns:BehaviorReference" />
 	    	</choice>
 	    </sequence>
 	    <attribute name="Add" type="boolean" use="required" />
-
     </complexType>
 
     <complexType name="BehaviorReferenceCondition">
@@ -185,7 +203,7 @@
   		<attribute name="Name" type="string" use="required" />
   		<attribute name="Frequency" type="int" use="required" />
   		<attribute name="Condition" type="tns:Parameter" />
-		<attribute name="Hidden" type="boolean" />
+  		<attribute name="Hidden" type="boolean" />
     </complexType>
 
     <complexType name="BehaviorCondition">
@@ -198,7 +216,7 @@
 
     <simpleType name="Parameter">
     	<restriction base="string">
-    		<pattern value="([$#]\{.+\})|(\-?[0-9]+(\.[0-9]+)?)|true|false|PullUp|Divided" />
+    		<pattern value="([$#]\{.+\})|(\-?[0-9]+(\.[0-9]+)?)|true|false|Divided|PullUp" />
     	</restriction>
     </simpleType>
 
