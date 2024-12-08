@@ -1,130 +1,170 @@
 package com.group_finity.mascot.image;
 
-import com.group_finity.mascot.NativeFactory;
-
-import javax.imageio.ImageIO;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class ImagePairLoader implements ImagePairStore {
+import javax.imageio.ImageIO;
 
-    private final Map<String, ImagePair> imagePairs = new ConcurrentHashMap<>(64, 0.75f, 2);
+import hqx.*;
+import java.awt.Color;
 
-    private final double scaling;
-    private final boolean logicalAnchors;
-    private final boolean asymmetryNameScheme;
-    private final boolean pixelArtScaling;
+/**
+ * Original Author: Yuki Yamada of Group Finity (http://www.group-finity.com/Shimeji/)
+ * Currently developed by Shimeji-ee Group.
+ */
 
-    private final Path basePath;
+public class ImagePairLoader
+{
+    public enum Filter { NEAREST_NEIGHBOUR, HQX, BICUBIC };
 
-    ImagePairLoader(ImagePairLoaderBuilder builder, Path basePath) {
-        this.scaling = builder.scaling;
-        this.logicalAnchors = builder.logicalAnchors;
-        this.asymmetryNameScheme = builder.asymmetryNameScheme;
-        this.pixelArtScaling = builder.pixelArtScaling;
-        this.basePath = basePath;
+    /**
+     */
+    public static void load( final String name, final String rightName, final Point center, final double scaling, final Filter filter, final double opacity ) throws IOException
+    {
+        if( ImagePairs.contains( name + ( rightName == null ? "" : rightName ) ) )
+            return;
+
+        final BufferedImage leftImage = scale( premultiply( ImageIO.read( new FileInputStream(name)), opacity ), scaling, filter );
+        final BufferedImage rightImage;
+        if( rightName == null )
+            rightImage = flip( leftImage );
+        else
+            rightImage = scale( premultiply( ImageIO.read( ImagePairLoader.class.getResource( rightName ) ), opacity ), scaling, filter );
+
+        ImagePair ip = new ImagePair(new MascotImage( leftImage, new Point( (int)Math.round( center.x * scaling ), (int)Math.round( center.y * scaling ) ) ),
+                                     new MascotImage( rightImage, new Point( rightImage.getWidth( ) - (int)Math.round( center.x * scaling ), (int)Math.round( center.y * scaling ) ) ) );
+        ImagePairs.load( name + ( rightName == null ? "" : rightName ), ip );
     }
 
-    @Override
-    public String load(String imageText, String imageRightText, Point anchor) throws IOException {
-        if (anchor == null) {
-            throw  new IOException("Invalid/Missing image anchor.");
-        }
-        if (!imageText.startsWith("/") || (imageRightText != null && !imageRightText.startsWith("/"))) {
-            throw new IOException("Image text must start with '/' (slash) for compatibility.");
-        }
+	/**
+	 */
+    private static BufferedImage flip(final BufferedImage src)
+    {
+        final BufferedImage copy = new BufferedImage( src.getWidth( ), src.getHeight( ),
+                                                      src.getType( ) == BufferedImage.TYPE_CUSTOM ? BufferedImage.TYPE_INT_ARGB : src.getType( ) );
 
-        imageText = imageText.replaceAll("^/+", "");
-
-        if (imageRightText != null) {
-            imageRightText = imageRightText.replaceAll("^/+", "");
-        }
-        else if (asymmetryNameScheme) {
-            String possibleImgRight = imageText.replaceAll("\\.[a-zA-Z]+$", "-r$0");
-            if (Files.isRegularFile(basePath.resolve(possibleImgRight))) {
-                imageRightText = possibleImgRight;
+        for( int y = 0; y < src.getHeight( ); ++y )
+        {
+            for( int x = 0; x < src.getWidth( ); ++x )
+            {
+                copy.setRGB( copy.getWidth( ) - x - 1, y, src.getRGB( x, y ) );
             }
         }
-
-        String key = imageText + (imageRightText == null ? "" : ":" + imageRightText);
-        if (logicalAnchors) {
-            key = anchor.x + "," + anchor.y + ":" + key;
-        }
-
-        if (imagePairs.containsKey(key)) {
-            return key;
-        }
-
-        Path leftPath = basePath.resolve(imageText);
-        Path rightPath = imageRightText == null ? null : basePath.resolve(imageRightText);
-
-        ImagePair ip = createImagePair(leftPath, rightPath, anchor, getScaling());
-        imagePairs.put(key, ip);
-
-        return key;
-    }
-
-    @Override
-    public ImagePair get(String key) {
-        return key == null ? null : imagePairs.get(key);
-    }
-
-    @Override
-    public double getScaling() {
-        return scaling;
-    }
-
-    protected ImagePair createImagePair(Path leftImgPath, Path rightImgPath, Point rawAnchor, double scaling) throws IOException {
-        BufferedImage leftImg = transform(ImageIO.read(leftImgPath.toFile()), scaling, false);
-        BufferedImage rightImg = rightImgPath == null
-                ? transform(leftImg, 1, true)
-                : transform(ImageIO.read(rightImgPath.toFile()), scaling, false);
-
-        final Point scaledAnchor = new Point(
-                (int) Math.round(rawAnchor.x * scaling),
-                (int) Math.round(rawAnchor.y * scaling)
-        );
-
-        MascotImage lMascot = new MascotImage(
-                NativeFactory.getInstance().newNativeImage(leftImg),
-                scaledAnchor,
-                new Dimension(leftImg.getWidth(), leftImg.getHeight())
-        );
-
-        MascotImage rMascot = new MascotImage(
-                NativeFactory.getInstance().newNativeImage(rightImg),
-                new Point(rightImg.getWidth() - scaledAnchor.x, scaledAnchor.y),
-                new Dimension(rightImg.getWidth(), rightImg.getHeight())
-        );
-
-        return new ImagePair(lMascot, rMascot);
-    }
-
-    protected BufferedImage transform(BufferedImage src, double scaleFactor, boolean flip) {
-        final int fWidth = (int) Math.round(src.getWidth() * scaleFactor);
-        final int fHeight = (int) Math.round(src.getHeight() * scaleFactor);
-
-        final BufferedImage copy = new BufferedImage(fWidth, fHeight, BufferedImage.TYPE_INT_ARGB_PRE);
-
-        Graphics2D g2d = copy.createGraphics();
-        var renderHint = pixelArtScaling
-                ? RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR
-                : RenderingHints.VALUE_INTERPOLATION_BICUBIC;
-
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, renderHint);
-        g2d.drawImage(src, (flip ? fWidth : 0), 0, (flip ? -fWidth : fWidth), fHeight, null);
-        g2d.dispose();
-
         return copy;
     }
 
-}
+    private static BufferedImage premultiply( final BufferedImage source, final double opacity )
+    {
+        final BufferedImage returnImage = new BufferedImage( source.getWidth( ), source.getHeight( ),
+                                                             source.getType( ) == BufferedImage.TYPE_CUSTOM ? BufferedImage.TYPE_INT_ARGB_PRE : source.getType( ) );
+        Color colour;
+        float[ ] components;
 
+        for( int y = 0; y < returnImage.getHeight( ); ++y )
+        {
+            for( int x = 0; x < returnImage.getWidth( ); ++x )
+            {
+                colour = new Color( source.getRGB( x, y ), true );
+                components = colour.getComponents( null );
+                components[ 3 ] *= opacity;
+                components[ 0 ] = components[ 3 ] * components[ 0 ];
+                components[ 1 ] = components[ 3 ] * components[ 1 ];
+                components[ 2 ] = components[ 3 ] * components[ 2 ];
+                colour = new Color( components[ 0 ], components[ 1 ], components[ 2 ], components[ 3 ] );
+                returnImage.setRGB( x, y, colour.getRGB( ) );
+            }
+        }
+
+        return returnImage;
+    }
+
+    private static BufferedImage scale( final BufferedImage source, final double scaling, Filter filter )
+    {
+        int width = source.getWidth( );
+        int height = source.getHeight( );
+        BufferedImage workingImage = null;
+
+        // apply hqx if applicable
+        double effectiveScaling = scaling;
+        if( filter == Filter.HQX && scaling > 1 )
+        {
+            int[] buffer;
+            int[ ] rbgValues = source.getRGB( 0, 0, width, height, null, 0, width );
+
+            if( scaling == 4 || scaling == 8 )
+            {
+                width *= 4;
+                height *= 4;
+                buffer = new int[ width * height ];
+                Hqx_4x.hq4x_32_rb( rbgValues, buffer, width / 4, height / 4 );
+                rbgValues = buffer;
+                effectiveScaling = scaling > 4 ? 2 : 1;
+            }
+            else if( scaling == 3 || scaling == 6 )
+            {
+                width *= 3;
+                height *= 3;
+                buffer = new int[ width * height ];
+                Hqx_3x.hq3x_32_rb( rbgValues, buffer, width / 3, height / 3 );
+                rbgValues = buffer;
+                effectiveScaling = scaling > 4 ? 2 : 1;
+            }
+            else if( scaling == 2 )
+            {
+                width *= 2;
+                height *= 2;
+                buffer = new int[ width * height ];
+                Hqx_2x.hq2x_32_rb( rbgValues, buffer, width / 2, height / 2 );
+                rbgValues = buffer;
+                effectiveScaling = 1;
+            }
+            else
+                filter = Filter.NEAREST_NEIGHBOUR;
+
+            // if hqx is still on then apply the changes
+            if( filter == Filter.HQX )
+            {
+                workingImage = new BufferedImage( (int)Math.round( width * effectiveScaling ), (int)Math.round( height * effectiveScaling ), BufferedImage.TYPE_INT_ARGB_PRE );
+                int srcColIndex = 0;
+                int srcRowIndex = 0;
+
+                for( int y = 0; y < workingImage.getHeight( ); ++y )
+                {
+                    for( int x = 0; x < workingImage.getWidth( ); ++x )
+                    {
+                        workingImage.setRGB( x, y, rbgValues[ srcColIndex / (int)effectiveScaling ] );
+                        ++srcColIndex;
+                    }
+
+                    // resets the srcColIndex to re-use the same indexes and stretch horizontally
+                    ++srcRowIndex;
+                    if( srcRowIndex != effectiveScaling )
+                        srcColIndex -= workingImage.getWidth( );
+                    else
+                        srcRowIndex = 0;
+                }
+            }
+        }
+
+        width = (int)Math.round( width * effectiveScaling );
+        height = (int)Math.round( height * effectiveScaling );
+
+        final BufferedImage copy = new BufferedImage( width, height, BufferedImage.TYPE_INT_ARGB_PRE );
+
+        Graphics2D g2d = copy.createGraphics( );
+        Object renderHint = filter == Filter.BICUBIC
+                ? RenderingHints.VALUE_INTERPOLATION_BICUBIC
+                : RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
+
+        g2d.setRenderingHint( RenderingHints.KEY_INTERPOLATION, renderHint );
+        g2d.drawImage( workingImage != null ? workingImage : source, 0, 0, width, height, null );
+
+        g2d.dispose( );
+
+        return copy;
+    }
+}

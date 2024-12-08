@@ -1,45 +1,44 @@
 package com.group_finity.mascot.image;
 
-import com.group_finity.mascot.window.TranslucentWindow;
-
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.image.BufferedImage;
 
-@SuppressWarnings("ClassCanBeRecord")
-// this class is exposed to scripting and making it a record might break it (I don't really know)
+import com.group_finity.mascot.NativeFactory;
+
+/**
+ * Original Author: Yuki Yamada of Group Finity (http://www.group-finity.com/Shimeji/)
+ * Currently developed by Shimeji-ee Group.
+ */
+
 public class MascotImage {
 
-    private final NativeImage image;
-    private final Point center;
-    private final Dimension size;
+	private final NativeImage image;
 
-    public MascotImage(final NativeImage image, final Point center, final Dimension size) {
-        this.image = image;
-        this.center = center;
-        this.size = size;
-    }
+	private final Point center;
 
-    /**
-     * Opaque type containing the data for the native code to render the image.
-     */
-    public NativeImage getImage() {
-        return this.image;
-    }
+	private final Dimension size;
 
-    /**
-     * The scaled image anchor, this is where the image touches the environment.
-     */
-    public Point getCenter() {
-        return this.center;
-    }
+	public MascotImage(final NativeImage image, final Point center, final Dimension size) {
+		this.image = image;
+		this.center = center;
+		this.size = size;
+	}
 
-    /**
-     * The size of the image after the scaling has been applied.
-     * <p>
-     * This is value used when setBounds is called on {@link TranslucentWindow}
-     */
-    public Dimension getSize() {
-        return this.size;
-    }
+	public MascotImage(final BufferedImage image, final Point center) {
+		this(NativeFactory.getInstance().newNativeImage(image), center, new Dimension(image.getWidth(), image.getHeight()));
+	}
+
+	public NativeImage getImage() {
+		return this.image;
+	}
+
+	public Point getCenter() {
+		return this.center;
+	}
+
+	public Dimension getSize() {
+		return this.size;
+	}
 
 }

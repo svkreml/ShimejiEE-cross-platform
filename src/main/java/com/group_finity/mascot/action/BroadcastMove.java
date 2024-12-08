@@ -1,15 +1,20 @@
 package com.group_finity.mascot.action;
 
-import com.group_finity.mascot.animation.Animation;
-import com.group_finity.mascot.exception.LostGroundException;
-import com.group_finity.mascot.exception.VariableException;
-import com.group_finity.mascot.script.VariableMap;
-
 import java.util.List;
 
+import com.group_finity.mascot.animation.Animation;
+import com.group_finity.mascot.script.VariableMap;
+
+/**
+ * Original Author: Yuki Yamada of Group Finity
+ * (http://www.group-finity.com/Shimeji/) Currently developed by Shimeji-ee
+ * Group.
+ */
 @Deprecated
-public class BroadcastMove extends Move {
-    public BroadcastMove(java.util.ResourceBundle schema, final List<Animation> animations, final VariableMap context) {
-        super(schema, animations, context);
+public class BroadcastMove extends Move
+{
+    public BroadcastMove( java.util.ResourceBundle schema, final List<Animation> animations, final VariableMap context )
+    {
+        super( schema, animations, context );
     }
 }

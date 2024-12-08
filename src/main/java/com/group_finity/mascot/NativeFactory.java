@@ -1,53 +1,74 @@
 package com.group_finity.mascot;
 
-import com.group_finity.mascot.environment.NativeEnvironment;
-import com.group_finity.mascot.image.NativeImage;
-import com.group_finity.mascot.window.TranslucentWindow;
-
 import java.awt.image.BufferedImage;
-import java.nio.file.Path;
 
-/**
- * Picks the appropriate package of native code based on the operating system
- */
-public abstract class NativeFactory {
+import com.group_finity.mascot.environment.Environment;
+import com.group_finity.mascot.image.NativeImage;
+import com.group_finity.mascot.image.TranslucentWindow;
+import com.sun.jna.Platform;
 
-    private static final String NATIVE_PKG = "com.group_finity.mascotnative";
-
+public abstract class NativeFactory
+{
     private static NativeFactory instance;
 
-    protected static Path nativeLibDir;
-
-    public static void init(String subpkg, Path libDir) {
-        if (instance != null) {
-            instance.shutdown();
-        }
-
-        nativeLibDir = libDir;
-
-        try {
-            @SuppressWarnings("unchecked")
-            final Class<? extends NativeFactory> impl = (Class<? extends NativeFactory>) Class
-                    .forName(NATIVE_PKG + "." + subpkg + ".NativeFactoryImpl");
-
-            instance = impl.getDeclaredConstructor().newInstance();
-
-        } catch (Error | Exception e) {
-            System.err.println("ERROR: could not load native code package");
-            throw new RuntimeException(e);
-        }
+    static
+    {
+        resetInstance( );
     }
 
-    public static NativeFactory getInstance() {
+    public static NativeFactory getInstance( )
+    {
         return instance;
     }
 
-    public abstract NativeEnvironment getEnvironment();
+    public static void resetInstance( )
+    {
+        String subpkg = Main.getInstance( ).getProperties( ).getProperty( "Environment", "generic" );
 
-    public abstract NativeImage newNativeImage(BufferedImage src);
+        if( subpkg.equals( "generic" ) )
+        {
+            if( Platform.isWindows( ) )
+            {
+                subpkg = "win";
+            }
+            else if( Platform.isMac( ) )
+            {
+                subpkg = "mac";
+            }
+            else if( Platform.isX11( ) )
+            {
+                subpkg = "x11";
+            }
+        }
 
-    public abstract TranslucentWindow newTransparentWindow();
+        String basepkg = NativeFactory.class.getName( );
+        // Remove a class name
+        basepkg = basepkg.substring( 0, basepkg.lastIndexOf( '.' ) );
 
-    protected void shutdown() {}
+        try
+        {
+            @SuppressWarnings( "unchecked" )
+            final Class<? extends NativeFactory> impl = (Class<? extends NativeFactory>)Class.forName( basepkg + "." + subpkg + ".NativeFactoryImpl" );
 
+            instance = impl.newInstance( );
+        }
+        catch( final ClassNotFoundException e )
+        {
+            throw new RuntimeException( e );
+        }
+        catch( final InstantiationException e )
+        {
+            throw new RuntimeException( e );
+        }
+        catch( final IllegalAccessException e )
+        {
+            throw new RuntimeException( e );
+        }
+    }
+
+    public abstract Environment getEnvironment( );
+
+    public abstract NativeImage newNativeImage( BufferedImage src );
+
+    public abstract TranslucentWindow newTransparentWindow( );
 }

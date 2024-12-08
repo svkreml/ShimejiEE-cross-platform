@@ -1,114 +1,156 @@
 package com.group_finity.mascot.action;
 
-import com.group_finity.mascot.animation.Animation;
-import com.group_finity.mascot.exception.LostGroundException;
-import com.group_finity.mascot.exception.VariableException;
-import com.group_finity.mascot.script.VariableMap;
-
 import java.awt.Point;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Move extends BorderedAction {
+import com.group_finity.mascot.animation.Animation;
+import com.group_finity.mascot.exception.LostGroundException;
+import com.group_finity.mascot.exception.VariableException;
+import com.group_finity.mascot.script.VariableMap;
 
-    private static final Logger log = Logger.getLogger(Move.class.getName());
+/**
+ * Original Author: Yuki Yamada of Group Finity (http://www.group-finity.com/Shimeji/)
+ * Currently developed by Shimeji-ee Group.
+ */
+public class Move extends BorderedAction
+{
+    private static final Logger log = Logger.getLogger( Move.class.getName( ) );
 
-    /**
-     * @custom.shimeji.param
-     * @see Move#getTargetX()
-     */
     private static final String PARAMETER_TARGETX = "TargetX";
-    public static final int DEFAULT_TARGETX = Integer.MAX_VALUE;
 
-    /**
-     * @custom.shimeji.param
-     * @see Move#getTargetY()
-     */
+    private static final int DEFAULT_TARGETX = Integer.MAX_VALUE;
+
     private static final String PARAMETER_TARGETY = "TargetY";
-    public static final int DEFAULT_TARGETY = Integer.MAX_VALUE;
 
-    public Move(java.util.ResourceBundle schema, final List<Animation> animations, final VariableMap context) {
-        super(schema, animations, context);
+    private static final int DEFAULT_TARGETY = Integer.MAX_VALUE;
+    
+    protected boolean turning = false;
+    
+    private Boolean hasTurning = null;
+
+    public Move( java.util.ResourceBundle schema, final List<Animation> animations, final VariableMap context )
+    {
+        super( schema, animations, context );
     }
 
     @Override
-    public boolean hasNext() throws VariableException {
+    public boolean hasNext( ) throws VariableException
+    {
+        final int targetX = getTargetX( );
+        final int targetY = getTargetY( );
 
-        final int targetX = getTargetX();
-        final int targetY = getTargetY();
+        boolean hasNotReached = ( targetX != Integer.MIN_VALUE && getMascot( ).getAnchor( ).x == targetX ) ||
+                                ( targetY != Integer.MIN_VALUE && getMascot( ).getAnchor( ).y == targetY );
 
-        boolean noMoveX = false;
-        boolean noMoveY = false;
-
-        if (targetX != Integer.MIN_VALUE) {
-            if (getMascot().getAnchor().x == targetX) {
-                noMoveX = true;
-            }
-        }
-
-        if (targetY != Integer.MIN_VALUE) {
-            if (getMascot().getAnchor().y == targetY) {
-                noMoveY = true;
-            }
-        }
-
-        return super.hasNext() && !noMoveX && !noMoveY;
+        return super.hasNext( ) && ( !hasNotReached || turning );
     }
 
     @Override
-    protected void tick() throws LostGroundException, VariableException {
+    protected void tick( ) throws LostGroundException, VariableException
+    {
+        super.tick( );
 
-        super.tick();
-
-        if ((getBorder() != null) && !getBorder().isOn(getMascot().getAnchor())) {
-            log.log(Level.INFO, "Lost Ground ({0},{1})", new Object[]{getMascot(), this});
-            throw new LostGroundException();
+        if( ( getBorder( ) != null ) && !getBorder( ).isOn( getMascot( ).getAnchor( ) ) )
+        {
+            log.log( Level.INFO, "Lost Ground ({0},{1})", new Object[] { getMascot( ), this } );
+            throw new LostGroundException( );
         }
 
-        int targetX = getTargetX();
-        int targetY = getTargetY();
+        int targetX = getTargetX( );
+        int targetY = getTargetY( );
 
         boolean down = false;
 
-        if (targetX != DEFAULT_TARGETX) {
-            if (getMascot().getAnchor().x != targetX) {
-                getMascot().setLookRight(getMascot().getAnchor().x < targetX);
+        if( targetX != DEFAULT_TARGETX )
+        {
+            if( getMascot( ).getAnchor( ).x != targetX )
+            {
+                // activate turn animation if we change directions
+                turning = hasTurningAnimation( ) && ( turning || getMascot( ).getAnchor( ).x < targetX != getMascot( ).isLookRight( ) );
+                getMascot( ).setLookRight( getMascot( ).getAnchor( ).x < targetX );
             }
         }
-        if (targetY != DEFAULT_TARGETY) {
-            down = getMascot().getAnchor().y < targetY;
+        if( targetY != DEFAULT_TARGETY )
+        {
+            down = getMascot( ).getAnchor( ).y < targetY;
+        }
+        
+        // check if turning animation has finished
+        if( turning && getTime( ) >= getAnimation( ).getDuration( ) )
+        {
+            turning = false;
         }
 
-        getAnimation().next(getMascot(), getTime());
+        getAnimation( ).next( getMascot( ), getTime( ) );
 
-        if (targetX != DEFAULT_TARGETX) {
-            if ((getMascot().isLookRight() && (getMascot().getAnchor().x >= targetX))
-                    || (!getMascot().isLookRight() && (getMascot().getAnchor().x <= targetX))) {
-                getMascot().setAnchor(new Point(targetX, getMascot().getAnchor().y));
+        if( targetX != DEFAULT_TARGETX )
+        {
+            if( ( getMascot( ).isLookRight( ) && ( getMascot( ).getAnchor( ).x >= targetX ) ) || 
+                ( !getMascot( ).isLookRight( ) && ( getMascot( ).getAnchor( ).x <= targetX ) ) )
+            {
+                getMascot( ).setAnchor( new Point( targetX, getMascot( ).getAnchor( ).y ) );
             }
         }
-        if (targetY != DEFAULT_TARGETY) {
-            if ((down && (getMascot().getAnchor().y >= targetY))
-                    || (!down && (getMascot().getAnchor().y <= targetY))) {
-                getMascot().setAnchor(new Point(getMascot().getAnchor().x, targetY));
+        if( targetY != DEFAULT_TARGETY )
+        {
+            if( ( down && ( getMascot( ).getAnchor( ).y >= targetY ) ) ||
+                ( !down && ( getMascot( ).getAnchor( ).y <= targetY ) ) )
+            {
+                getMascot( ).setAnchor( new Point( getMascot( ).getAnchor( ).x, targetY ) );
+            }
+        }
+    }
+    
+    @Override
+    protected Animation getAnimation( ) throws VariableException
+    {
+        // had to expose both animations and varibles for this
+        // is there a better way?
+        List<Animation> animations = super.getAnimations( );
+        for( int index = 0; index < animations.size( ); index++ )
+        {
+            if( animations.get( index ).isEffective( getVariables( ) ) && 
+                turning == animations.get( index ).isTurn( ) )
+            {
+                return animations.get( index );
             }
         }
 
+        return null;
+    }
+    
+    protected boolean hasTurningAnimation( )
+    {
+        if( hasTurning == null )
+        {
+            hasTurning = false;
+            List<Animation> animations = super.getAnimations( );
+            for( int index = 0; index < animations.size( ); index++ )
+            {
+                if( animations.get( index ).isTurn( ) )
+                {
+                    hasTurning = true;
+                    break;
+                }
+            }
+        }
+        return hasTurning;
+    }
+    
+    protected boolean isTurning( )
+    {
+        return turning;
     }
 
-    /**
-     * The action stops when the mascot reaches this x-axis
-     * */
-    private int getTargetX() throws VariableException {
-        return eval(getSchema().getString(PARAMETER_TARGETX), Number.class, DEFAULT_TARGETX).intValue();
+    private int getTargetX( ) throws VariableException
+    {
+        return eval( getSchema( ).getString( PARAMETER_TARGETX ), Number.class, DEFAULT_TARGETX ).intValue( );
     }
 
-    /**
-     * The action stops when the mascot reaches this y-axis
-     * */
-    private int getTargetY() throws VariableException {
-        return eval(getSchema().getString(PARAMETER_TARGETY), Number.class, DEFAULT_TARGETY).intValue();
+    private int getTargetY( ) throws VariableException
+    {
+        return eval( getSchema( ).getString( PARAMETER_TARGETY ), Number.class, DEFAULT_TARGETY ).intValue( );
     }
-
 }

@@ -1,43 +1,43 @@
 package com.group_finity.mascot.action;
 
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
 import com.group_finity.mascot.Mascot;
 import com.group_finity.mascot.animation.Animation;
 import com.group_finity.mascot.exception.VariableException;
 import com.group_finity.mascot.script.VariableMap;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
 /**
- * The base class of an action that ends instantly after starting (only lasting for one tick).
- * These can be used to change the state of the mascot
- * */
+ * Original Author: Yuki Yamada of Group Finity (http://www.group-finity.com/Shimeji/)
+ * Currently developed by Shimeji-ee Group.
+ */
 public abstract class InstantAction extends ActionBase {
 
-    private static final Logger log = Logger.getLogger(InstantAction.class.getName());
+	private static final Logger log = Logger.getLogger(InstantAction.class.getName());
 
-    public InstantAction(java.util.ResourceBundle schema, final VariableMap params) {
-        super(schema, new ArrayList<Animation>(), params);
-    }
+	public InstantAction( java.util.ResourceBundle schema, final VariableMap params) {
+		super( schema, new ArrayList<Animation>(), params);
 
-    @Override
-    public final void init(final Mascot mascot) throws VariableException {
-        super.init(mascot);
+	}
 
-        if (super.hasNext()) {
-            apply();
-        }
-    }
+	@Override
+	public final void init(final Mascot mascot) throws VariableException {
+		super.init(mascot);
 
-    protected abstract void apply() throws VariableException;
+		if (super.hasNext()) {
+			apply();
+		}
+	}
 
-    @Override
-    public final boolean hasNext() throws VariableException {
-        super.hasNext();
-        return false;
-    }
+	protected abstract void apply() throws VariableException;
 
-    @Override
-    protected final void tick() {}
+	@Override
+	public final boolean hasNext() throws VariableException {
+		return super.hasNext() && false;
+	}
 
+	@Override
+	protected final void tick() {
+	}
 }

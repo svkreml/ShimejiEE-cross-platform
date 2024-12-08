@@ -1,222 +1,215 @@
 package com.group_finity.mascot.environment;
 
+import com.group_finity.mascot.Main;
+import java.awt.Point;
+
 import com.group_finity.mascot.Mascot;
 import com.group_finity.mascot.NativeFactory;
 
-import java.awt.Point;
+/**
+ * Original Author: Yuki Yamada of Group Finity (http://www.group-finity.com/Shimeji/)
+ * Currently developed by Shimeji-ee Group.
+ */
 
-public class MascotEnvironment {
-
-    private final NativeEnvironment impl = NativeFactory.getInstance().getEnvironment();
+public class MascotEnvironment
+{
+    private final Environment impl;
 
     private final Mascot mascot;
 
-    public MascotEnvironment(Mascot mascot) {
+    private Area currentWorkArea;
+
+    public MascotEnvironment( Mascot mascot )
+    {
         this.mascot = mascot;
+        impl = NativeFactory.getInstance( ).getEnvironment( );
+        impl.init( );
     }
 
-    //---desktop
-
-    /**
-     * The ares of the work area at the mascot's anchor
-     * <p>
-     * If two areas are found, the first one found is returned.
-     * The delta values of these areas are not reliable and should always be treated as 0.
-     * <p>
-     * An invisible area means that the mascot is currently not in any of the areas.
-     */
-    public Area getWorkArea() {
-        return getWorkArea(false);
+    public Area getWorkArea( )
+    {
+        return getWorkArea( false );
     }
 
-    /**
-     * @hidden
-     */
-    public Area getWorkArea(boolean ignoreSettings) {
-        return impl.getWorkAreaAt(mascot.getAnchor());
-    }
+    public Area getWorkArea( Boolean ignoreSettings )
+    {
+        if ( currentWorkArea != null )
+        {
+            if( ignoreSettings || ( Boolean.parseBoolean( Main.getInstance( ).getProperties( ).getProperty( "Multiscreen", "true" ) ) ) )
+            {
+                // NOTE Windows
+                if( currentWorkArea != impl.getWorkArea( ) && currentWorkArea.toRectangle( ).contains( impl.getWorkArea( ).toRectangle( ) ) )
+                {
+                    if( impl.getWorkArea( ).contains( mascot.getAnchor( ).x, mascot.getAnchor( ).y ) )
+                    {
+                        currentWorkArea = impl.getWorkArea( );
+                        return currentWorkArea;
+                    }
+                }
 
-    /**
-     * The combined bounds of all displays
-     */
-    public Area getScreen() {
-        return impl.getScreen();
-    }
-
-    /**
-     * @hidden
-     */
-    @SuppressWarnings("unused")
-    public ComplexArea getComplexScreen() {
-        return impl.getComplexScreen();
-    }
-
-    //---borders
-
-    /**
-     * The ceiling that the mascot is currently on.
-     * <p>
-     * A ceiling can either be the top of a work area or the bottom of an IE.
-     * This method takes multiple displays into account and reports no border if the
-     * found border overlaps a different display's border.
-     * <p>
-     * {@link NotOnBorder#INSTANCE} is returned if the mascot is not on any ceiling surfaces
-     */
-    public Border getCeiling() {
-        return getCeiling(false);
-    }
-
-    /**
-     * @hidden
-     */
-    public Border getCeiling(boolean ignoreSeparator) {
-        if (getActiveIE().getBottomBorder().isOn(mascot.getAnchor())) {
-            return getActiveIE().getBottomBorder();
+                // NOTE
+                if ( currentWorkArea.contains( mascot.getAnchor( ).x, mascot.getAnchor( ).y ) ) 
+                {
+                    return currentWorkArea;
+                }
+            }
+            else return currentWorkArea;
         }
 
-        Area workArea = getWorkArea();
-        if (workArea.getTopBorder().isOn(mascot.getAnchor())) {
-            if (isScreenTopBottom()) {
-                return workArea.getTopBorder();
+        if( impl.getWorkArea( ).contains( mascot.getAnchor( ).x, mascot.getAnchor( ).y ) )
+        {
+            currentWorkArea = impl.getWorkArea( );
+            return currentWorkArea;
+        }
+
+        for( Area area: impl.getScreens( ) )
+        {
+            if ( area.contains( mascot.getAnchor( ).x, mascot.getAnchor( ).y ) )
+            {
+                currentWorkArea = area;
+                return currentWorkArea;
+            }
+        }
+
+        currentWorkArea = impl.getWorkArea( );
+        return currentWorkArea;
+    }
+
+    public Area getActiveIE( )
+    {
+        Area activeIE = impl.getActiveIE( );
+        
+        if( currentWorkArea != null && !Boolean.parseBoolean( Main.getInstance( ).getProperties( ).getProperty( "Multiscreen", "true" ) ) && !currentWorkArea.toRectangle( ).intersects( activeIE.toRectangle( ) ) )
+            return new Area( );
+        
+        return activeIE;
+    }
+    
+    public String getActiveIETitle( )
+    {
+        return impl.getActiveIETitle( );
+    }
+
+    public Border getCeiling( )
+    {
+        return getCeiling( false );
+    }
+
+    public Border getCeiling( boolean ignoreSeparator )
+    {
+        if( getActiveIE( ).getBottomBorder( ).isOn( mascot.getAnchor( ) ) )
+        {
+            return getActiveIE( ).getBottomBorder( );
+        }
+        if( getWorkArea( ).getTopBorder( ).isOn( mascot.getAnchor( ) ) )
+        {
+            if ( !ignoreSeparator || isScreenTopBottom( ) )
+            {
+                    return getWorkArea( ).getTopBorder( );
             }
         }
         return NotOnBorder.INSTANCE;
     }
 
-    /**
-     * The floor that the mascot is currently on.
-     * <p>
-     * A floor can either be the bottom of a work area or the top of an IE.
-     * This method takes multiple displays into account and reports no border if the
-     * found border overlaps a different display's border.
-     * <p>
-     * {@link NotOnBorder#INSTANCE} is returned if the mascot is not on any ceiling surfaces
-     */
-    public Border getFloor() {
-        return getFloor(false);
+    public ComplexArea getComplexScreen( )
+    {
+        return impl.getComplexScreen( );
     }
 
-    /**
-     * @hidden
-     */
-    public Border getFloor(boolean ignoreSeparator) {
-        if (getActiveIE().getTopBorder().isOn(mascot.getAnchor())) {
-            return getActiveIE().getTopBorder();
-        }
+    public Location getCursor( )
+    {
+        return impl.getCursor( );
+    }
 
-        Area workArea = getWorkArea();
-        if (workArea.getBottomBorder().isOn(mascot.getAnchor())) {
-            if (isScreenTopBottom()) {
-                return workArea.getBottomBorder();
+    public Border getFloor( )
+    {
+        return getFloor( false );
+    }
+
+    public Border getFloor( boolean ignoreSeparator )
+    {
+        if( getActiveIE( ).getTopBorder( ).isOn( mascot.getAnchor( ) ) )
+        {
+            return getActiveIE( ).getTopBorder( );
+        }
+        if( getWorkArea( ).getBottomBorder( ).isOn( mascot.getAnchor( ) ) )
+        {
+            if( !ignoreSeparator || isScreenTopBottom( ) )
+            {
+                return getWorkArea( ).getBottomBorder( );
             }
         }
         return NotOnBorder.INSTANCE;
     }
 
-    /**
-     * The side wall that the mascot is currently on.
-     * <p>
-     * A wall can be either side of a work area or IE.
-     * This method takes multiple displays into account and reports no border if the
-     * found border overlaps a different display's border.
-     * <p>
-     * {@link NotOnBorder#INSTANCE} is returned if the mascot is not on any ceiling surfaces
-     */
-    public Border getWall() {
-        return getWall(false);
+    public Area getScreen( )
+    {
+        return impl.getScreen( );
     }
 
-    /**
-     * @hidden
-     */
-    public Border getWall(boolean ignoreSeparator) {
-        Border ieWall = mascot.isLookRight() ? getActiveIE().getLeftBorder() : getActiveIE().getRightBorder();
-        if (ieWall.isOn(mascot.getAnchor())) {
-            return ieWall;
+    public Border getWall( )
+    {
+        return getWall( false );
+    }
+
+    public Border getWall( boolean ignoreSeparator )
+    {
+        if( mascot.isLookRight( ) )
+        {
+            if( getActiveIE( ).getLeftBorder( ).isOn( mascot.getAnchor( ) ) )
+            {
+                return getActiveIE( ).getLeftBorder( );
+            }
+
+            if( getWorkArea( ).getRightBorder( ).isOn( mascot.getAnchor( ) ) )
+            {
+                if( !ignoreSeparator || isScreenLeftRight( ) )
+                {
+                    return getWorkArea( ).getRightBorder( );
+                }
+            }
         }
+        else
+        {
+            if( getActiveIE( ).getRightBorder( ).isOn( mascot.getAnchor( ) ) )
+            {
+                return getActiveIE( ).getRightBorder( );
+            }
 
-        Area workArea = getWorkArea();
-        Border screenWall = mascot.isLookRight() ? workArea.getRightBorder() : workArea.getLeftBorder();
-
-        if (screenWall.isOn(mascot.getAnchor())) {
-            if (isScreenLeftRight()) {
-                return screenWall;
+            if( getWorkArea( ).getLeftBorder( ).isOn( mascot.getAnchor( ) ) )
+            {
+                if( !ignoreSeparator || isScreenLeftRight( ) )
+                {
+                    return getWorkArea( ).getLeftBorder( );
+                }
             }
         }
 
         return NotOnBorder.INSTANCE;
     }
 
-    //---IE
-
-    /**
-     * The bounds of the current IE (interactive environment)
-     * <p>
-     * The IE is generally the "frontmost window" but this can be platform dependent.
-     * If there is no IE the {@link Area#isVisible() isVisible()} method of the returned Area will return false.
-     */
-    public Area getActiveIE() {
-        return impl.getActiveIE();
+    public void moveActiveIE( Point point )
+    {
+        impl.moveActiveIE( point );
     }
 
-    /**
-     * Name of the current IE
-     * <p>
-     * This value may be null even if there is a valid IE.
-     */
-    public String getActiveIETitle() {
-        return impl.getActiveIETitle();
+    public void restoreIE( )
+    {
+        impl.restoreIE( );
+    }
+    
+    public void refreshWorkArea( )
+    {
+        getWorkArea( true );
     }
 
-    /**
-     * Tries to set the top left corner of the current IE to specified location.
-     * <p>
-     * If the point is an invalid location, or the mascot is not allowed to move IEs,
-     * the IE is simply not moved.
-     * @param point The destination in screen coordinates.
-     */
-    public void moveActiveIE(Point point) {
-        if (mascot.isIEMovementAllowed()) {
-            impl.moveActiveIE(point);
-        }
+    private boolean isScreenTopBottom( )
+    {
+        return impl.isScreenTopBottom( mascot.getAnchor( ) );
     }
 
-    //---cursor
-
-    /**
-     * A location object representing the cursor's location
-     */
-    public Location getCursor() {
-        return impl.getCursor();
+    private boolean isScreenLeftRight( )
+    {
+        return impl.isScreenLeftRight( mascot.getAnchor( ) );
     }
-
-    //---unused
-    // TODO: add proper logging
-
-    /**
-     * Doesn't do anything here. Left for script compatibility.
-     *
-     * @hidden
-     */
-    @Deprecated
-    public void restoreIE() {}
-
-    /**
-     * Doesn't do anything. Left for script compatibility.
-     *
-     * @hidden
-     */
-    @Deprecated
-    public void refreshWorkArea() {}
-
-    //---private
-
-    private boolean isScreenTopBottom() {
-        return impl.isScreenTopBottom(mascot.getAnchor());
-    }
-
-    private boolean isScreenLeftRight() {
-        return impl.isScreenLeftRight(mascot.getAnchor());
-    }
-
 }

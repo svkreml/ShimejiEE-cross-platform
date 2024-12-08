@@ -2,18 +2,14 @@ package com.group_finity.mascot.environment;
 
 import java.awt.Point;
 
+/**
+ * Original Author: Yuki Yamada of Group Finity (http://www.group-finity.com/Shimeji/)
+ * Currently developed by Shimeji-ee Group.
+ */
+
 public interface Border {
 
-    /**
-     * Whether the specified point is on the border.
-     */
-    boolean isOn(Point location);
+	public boolean isOn(Point location);
 
-    /**
-     * Finds the new location for the input point based on the border's movement.
-     * @param location the original location before movement.
-     * @return The new location.
-     */
-    Point move(Point location);
-
+	public Point move(Point location);
 }
