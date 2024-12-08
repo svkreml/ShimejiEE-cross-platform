@@ -56,7 +56,7 @@ public class Mascot
 
     private static final Logger log = Logger.getLogger( Mascot.class.getName( ) );
 
-    private static AtomicInteger lastId = new AtomicInteger( );
+    private static final AtomicInteger lastId = new AtomicInteger( );
 
     private final int id;
 
@@ -327,7 +327,7 @@ public class Mascot
             {
                 if( debugWindow == null )
                 {
-                    debugWindow = new DebugWindow( );
+                    debugWindow = new DebugWindow(imageSet + " " + id );
                 }
 				debugWindow.setVisible( true );
             }

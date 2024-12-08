@@ -6,8 +6,10 @@ package com.group_finity.mascot;
  */
 public class DebugWindow extends javax.swing.JFrame
 {
-    public DebugWindow( )
+  private final String title;
+    public DebugWindow( String title )
     {
+        this.title = title;
         initComponents( );
     }
 
@@ -108,6 +110,8 @@ public class DebugWindow extends javax.swing.JFrame
         lblActiveIEValue.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         lblActiveIEValue.setText("N/A");
 
+        setTitle(title);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -207,62 +211,62 @@ public class DebugWindow extends javax.swing.JFrame
     {
         lblBehaviourValue.setText( text );
     }
-    
+
     void setShimejiX( int x )
     {
         lblShimejiXValue.setText( String.format( "%d", x ) );
     }
-    
+
     void setShimejiY( int y )
     {
         lblShimejiYValue.setText( String.format( "%d", y ) );
     }
-    
+
     void setWindowTitle( String title )
     {
         lblActiveIEValue.setText( title );
     }
-    
+
     void setWindowX( int x )
     {
         lblWindowXValue.setText( String.format( "%d", x ) );
     }
-    
+
     void setWindowY( int y )
     {
         lblWindowYValue.setText( String.format( "%d", y ) );
     }
-    
+
     void setWindowWidth( int width )
     {
         lblWindowWidthValue.setText( String.format( "%d", width ) );
     }
-    
+
     void setWindowHeight( int height )
     {
         lblWindowHeightValue.setText( String.format( "%d", height ) );
     }
-    
+
     void setEnvironmentX( int x )
     {
         lblEnvironmentXValue.setText( String.format( "%d", x ) );
     }
-    
+
     void setEnvironmentY( int y )
     {
         lblEnvironmentYValue.setText( String.format( "%d", y ) );
     }
-    
+
     void setEnvironmentWidth( int width )
     {
         lblEnvironmentWidthValue.setText( String.format( "%d", width ) );
     }
-    
+
     void setEnvironmentHeight( int height )
     {
         lblEnvironmentHeightValue.setText( String.format( "%d", height ) );
     }
-    
+
     @Override
     public void setVisible( boolean b )
     {
@@ -283,7 +287,7 @@ public class DebugWindow extends javax.swing.JFrame
         }
         super.setVisible( b );
     }
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel lblActiveIE;
     private javax.swing.JLabel lblActiveIEValue;

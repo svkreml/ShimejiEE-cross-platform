@@ -291,16 +291,19 @@ public class Main
         getManager( ).start( );
     }
 
-    private boolean loadConfiguration( final String imageSet )
+    private boolean loadConfiguration(String imageSet )
     {
         try
         {
+
+            imageSet = imageSet.replace("\\", "/");
+
             // try to load in the correct xml files
             String filePath = "./conf/";
             String actionsFile = filePath + "actions.xml";
-            if( new File( filePath + "\u52D5\u4F5C.xml" ).exists( ) )
+            if( new File( filePath + "\u52D5\u4F5C.xml" ).exists( ) ) {
                 actionsFile = filePath + "\u52D5\u4F5C.xml";
-
+            }
             filePath = "./conf/" + imageSet + "/";
             if( new File( filePath + "actions.xml" ).exists( ) )
                 actionsFile = filePath + "actions.xml";
@@ -336,7 +339,7 @@ public class Main
             log.log( Level.INFO, imageSet + " Read Action File ({0})", actionsFile );
 
             final Document actions = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
-                    new FileInputStream( new File( actionsFile ) ) );
+                    new FileInputStream( new File(  actionsFile ) ) );
 
             Configuration configuration = new Configuration( );
 

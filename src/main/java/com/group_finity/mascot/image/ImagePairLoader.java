@@ -33,7 +33,7 @@ public class ImagePairLoader
         if( rightName == null )
             rightImage = flip( leftImage );
         else
-            rightImage = scale( premultiply( ImageIO.read( ImagePairLoader.class.getResource( rightName ) ), opacity ), scaling, filter );
+            rightImage = scale( premultiply( ImageIO.read(new FileInputStream(rightName)), opacity ), scaling, filter );
 
         ImagePair ip = new ImagePair(new MascotImage( leftImage, new Point( (int)Math.round( center.x * scaling ), (int)Math.round( center.y * scaling ) ) ),
                                      new MascotImage( rightImage, new Point( rightImage.getWidth( ) - (int)Math.round( center.x * scaling ), (int)Math.round( center.y * scaling ) ) ) );
