@@ -94,6 +94,8 @@
 		    	<attribute name="Affordance" type="string" />
 		    	<attribute name="Behavior" type="string" />
 		    	<attribute name="TargetBehavior" type="string" />
+		    	<attribute name="BornMascot" type="string" />
+		    	<attribute name="Draggable" type="boolean" />
     		</extension>
     	</complexContent>
     </complexType>
@@ -216,7 +218,7 @@
 
     <simpleType name="Parameter">
     	<restriction base="string">
-    		<pattern value="([$#]\{.+\})|(\-?[0-9]+(\.[0-9]+)?)|true|false|Divided|PullUp" />
+    		<pattern value="([$#]\{.+\})|(\-?[0-9]+(\.[0-9]+)?)|true|false|Divided|PullUp|[a-zA-Z]{1,20}]" />
     	</restriction>
     </simpleType>
 
