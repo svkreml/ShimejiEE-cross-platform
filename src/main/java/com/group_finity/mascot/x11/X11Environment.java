@@ -56,11 +56,23 @@ public class X11Environment extends Environment {
        // System.out.println("moving active IE" + point);
 
         try {
+            update();
+           // activeWindow.getGeometry().height
             activeWindow.move(activeWindow, point);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public void tick()
+    {
+        super.tick();
+        workArea.set( getWorkAreaRect() );
+        update();
+    }
+
+
 
     @Override
     public void restoreIE() {
@@ -89,6 +101,11 @@ public class X11Environment extends Environment {
             boolean badState = checkState(window.getState());
             boolean badType = checkType(window.getType());
             final String title = window.getTitle();
+
+            if(title.startsWith("win")){
+                return;
+            }
+
             if (badDesktop || badType || badState) {
                // System.out.println(title);
                 return;
