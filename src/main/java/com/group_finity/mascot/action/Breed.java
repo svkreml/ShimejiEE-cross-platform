@@ -77,6 +77,12 @@ public class Breed extends Animate
 
             for( int index = 0; index < getBornCount( ); index++ )
             {
+
+                if(Main.getInstance().manager.getMascots().size() > 20 ) {
+                    log.log( Level.INFO, "limit reached" );
+                    return;
+                }
+
                 final Mascot mascot = new Mascot( childType );
 
                 log.log( Level.INFO, "Breed Mascot ({0},{1},{2})", new Object[] { action.getMascot( ), action, mascot } );

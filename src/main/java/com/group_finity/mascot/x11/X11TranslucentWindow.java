@@ -96,6 +96,7 @@ public class X11TranslucentWindow extends JWindow implements TranslucentWindow {
             validate();
             this.repaint();
             prevImage = getImage();
+          //  Toolkit.getDefaultToolkit().sync();
         }
     }
 }

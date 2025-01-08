@@ -323,7 +323,7 @@ public class Manager {
         }
     }
 
-	private List<Mascot> getMascots() {
+	public List<Mascot> getMascots() {
 		return this.mascots;
 	}
 

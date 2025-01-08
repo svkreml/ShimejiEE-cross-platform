@@ -5,6 +5,7 @@ import com.group_finity.mascot.environment.Environment;
 import com.group_finity.mascot.image.NativeImage;
 import com.group_finity.mascot.image.TranslucentWindow;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class NativeFactoryImpl extends NativeFactory {

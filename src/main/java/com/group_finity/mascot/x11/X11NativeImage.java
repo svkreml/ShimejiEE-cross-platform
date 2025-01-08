@@ -8,17 +8,18 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.awt.image.ImageProducer;
 
-public class X11NativeImage implements NativeImage{
+public class X11NativeImage implements NativeImage {
 
     /**
      * Java Image object.
      */
-    private final BufferedImage managedImage;
+    private final Image managedImage;
 
     private final Icon icon;
 
     public X11NativeImage(final BufferedImage image) {
-        this.managedImage = image;
+
+        this.managedImage = Toolkit.getDefaultToolkit().createImage(image.getSource());
         this.icon = new ImageIcon(image);
     }
 
@@ -27,15 +28,15 @@ public class X11NativeImage implements NativeImage{
     }
 
     public Graphics getGraphics() {
-        return this.getManagedImage().createGraphics();
+        return this.getManagedImage().getGraphics();
     }
 
     public int getHeight() {
-        return this.getManagedImage().getHeight();
+        return this.getManagedImage().getHeight(null);
     }
 
     public int getWidth() {
-        return this.getManagedImage().getWidth();
+        return this.getManagedImage().getWidth(null);
     }
 
     public int getHeight(final ImageObserver observer) {
@@ -54,7 +55,7 @@ public class X11NativeImage implements NativeImage{
         return this.getManagedImage().getWidth(observer);
     }
 
-    BufferedImage getManagedImage() {
+    Image getManagedImage() {
         return this.managedImage;
     }
 

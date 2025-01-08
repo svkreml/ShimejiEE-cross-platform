@@ -55,7 +55,11 @@ public class X11Environment extends Environment {
     public void moveActiveIE(final Point point) {
        // System.out.println("moving active IE" + point);
 
-        activeWindow.move(activeWindow, point);
+        try {
+            activeWindow.move(activeWindow, point);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

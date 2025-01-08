@@ -94,7 +94,7 @@ public class Main
             System.exit( 0 );
         }
     }
-    private final Manager manager = new Manager( );
+    public final Manager manager = new Manager( );
     private ArrayList<String> imageSets = new ArrayList<String>( );
     private ConcurrentHashMap<String, Configuration> configurations = new ConcurrentHashMap<String, Configuration>( );
     private ConcurrentHashMap<String, ArrayList<String>> childImageSets = new ConcurrentHashMap<String, ArrayList<String>>( );
@@ -1271,6 +1271,11 @@ public class Main
      */
     public void createMascot( String imageSet )
     {
+        if(manager.getMascots().size() > 20 ) {
+            log.log( Level.INFO, "limit reached" );
+            return;
+        }
+
         log.log( Level.INFO, "create a mascot" );
 
         // Create one mascot
