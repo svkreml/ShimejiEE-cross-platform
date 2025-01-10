@@ -31,9 +31,6 @@ import com.group_finity.mascot.image.ImagePairs;
 import com.group_finity.mascot.imagesetchooser.ImageSetChooser;
 import com.group_finity.mascot.sound.Sounds;
 import com.joconner.i18n.Utf8ResourceBundleControl;
-import com.nilo.plaf.nimrod.NimRODLookAndFeel;
-import com.nilo.plaf.nimrod.NimRODTheme;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
@@ -135,8 +132,7 @@ public class Main
         }
     }
 
-    public void run( )
-    {
+    public void run( )  {
         // test operating system
         if( !System.getProperty("sun.arch.data.model").equals( "64" ) )
             platform = Platform.x86;
@@ -172,69 +168,13 @@ public class Main
             exit( );
         }
 
-        // load theme
-        try
-        {
-            // default light theme
-            NimRODLookAndFeel lookAndFeel = new NimRODLookAndFeel( );
 
-            // check for theme properties
-            NimRODTheme theme = null;
-            try
-            {
-                if( new File( "./conf/theme.properties" ).isFile( ) )
-                {
-                    theme = new NimRODTheme( "./conf/theme.properties" );
-                }
-            }
-            catch( Exception exc )
-            {
-                theme = null;
-            }
-
-            if( theme == null )
-            {
-                // default back to light theme if not found/valid
-                theme = new NimRODTheme( );
-                theme.setPrimary1( Color.decode( "#1EA6EB" ) );
-                theme.setPrimary2( Color.decode( "#28B0F5" ) );
-                theme.setPrimary3( Color.decode( "#32BAFF" ) );
-                theme.setSecondary1( Color.decode( "#BCBCBE" ) );
-                theme.setSecondary2( Color.decode( "#C6C6C8" ) );
-                theme.setSecondary3( Color.decode( "#D0D0D2" ) );
-                theme.setMenuOpacity( 255 );
-                theme.setFrameOpacity( 255 );
-            }
-
-            // handle menu size
-            if( !properties.containsKey( "MenuDPI" ) )
-            {
-                properties.setProperty( "MenuDPI", Math.max( java.awt.Toolkit.getDefaultToolkit( ).getScreenResolution( ), 96 ) + "" );
-                updateConfigFile( );
-            }
-            float menuScaling = Float.parseFloat( properties.getProperty( "MenuDPI", "96" ) ) / 96;
-            java.awt.Font font = theme.getUserTextFont( ).deriveFont( theme.getUserTextFont( ).getSize( ) * menuScaling );
-            theme.setFont( font );
-
-            NimRODLookAndFeel.setCurrentTheme( theme );
-            JFrame.setDefaultLookAndFeelDecorated( true );
-            JDialog.setDefaultLookAndFeelDecorated( true );
-            // all done
-            lookAndFeel.initialize( );
-            UIManager.setLookAndFeel( lookAndFeel );
+        try {
+            UIManager.setLookAndFeel( UIManager.getCrossPlatformLookAndFeelClassName( ) );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        catch( Exception ex )
-        {
-            try
-            {
-                UIManager.setLookAndFeel( UIManager.getCrossPlatformLookAndFeelClassName( ) );
-            }
-            catch( Exception ex1 )
-            {
-                log.log( Level.SEVERE, "Look & Feel unsupported.", ex1 );
-                exit( );
-            }
-        }
+
 
         // Get the image sets to use
         if( !Boolean.parseBoolean( properties.getProperty( "AlwaysShowShimejiChooser", "false" ) ) )

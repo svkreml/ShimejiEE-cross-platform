@@ -20,18 +20,12 @@ import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
 import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import com.nilo.plaf.nimrod.NimRODLookAndFeel;
-import com.nilo.plaf.nimrod.NimRODTheme;
-import com.nilo.plaf.nimrod.NimRODFontDialog;
 
 /**
  * @author Kilkakon
@@ -40,9 +34,9 @@ public class SettingsWindow extends javax.swing.JDialog
 {
     private final String configFile = "./conf/settings.properties";	// Config file name
     private final String themeFile = "./conf/theme.properties";
-    private NimRODTheme theme;
+/*    private NimRODTheme theme;
     private NimRODTheme oldTheme;
-    private NimRODLookAndFeel lookAndFeel;
+    private NimRODLookAndFeel lookAndFeel;*/
     private final ArrayList<String> listData = new ArrayList<String>( );
     private Boolean alwaysShowShimejiChooser = false;
     private Boolean alwaysShowInformationScreen = false;
@@ -170,29 +164,7 @@ public class SettingsWindow extends javax.swing.JDialog
         txtBlackColour.setText( String.format( "#%02X%02X%02X", blackColour.getRed( ), blackColour.getGreen( ), blackColour.getBlue( ) ) );
         pnlWhiteColourPreview.setBackground( whiteColour );
         txtWhiteColour.setText( String.format( "#%02X%02X%02X", whiteColour.getRed( ), whiteColour.getGreen( ), whiteColour.getBlue( ) ) );
-        theme = new NimRODTheme( );
-        theme.setPrimary1( primaryColour1 );
-        theme.setPrimary2( primaryColour2 );
-        theme.setPrimary3( primaryColour3 );
-        theme.setSecondary1( secondaryColour1 );
-        theme.setSecondary2( secondaryColour2 );
-        theme.setSecondary3( secondaryColour3 );
-        theme.setBlack( blackColour );
-        theme.setWhite( whiteColour );
         sldMenuOpacity.setValue( (int)( menuOpacity * 100 ) );
-        theme.setFont( font );
-        oldTheme = new NimRODTheme( );
-        oldTheme.setPrimary1( primaryColour1 );
-        oldTheme.setPrimary2( primaryColour2 );
-        oldTheme.setPrimary3( primaryColour3 );
-        oldTheme.setSecondary1( secondaryColour1 );
-        oldTheme.setSecondary2( secondaryColour2 );
-        oldTheme.setSecondary3( secondaryColour3 );
-        oldTheme.setBlack( blackColour );
-        oldTheme.setWhite( whiteColour );
-        oldTheme.setMenuOpacity( (int)( menuOpacity * 255 ) );
-        oldTheme.setFont( font );
-        lookAndFeel = (NimRODLookAndFeel)UIManager.getLookAndFeel( );
         
         chkWindowModeEnabled.setSelected( windowedMode );
         spnWindowWidth.setBackground( txtBackgroundColour.getBackground( ) );
@@ -249,7 +221,6 @@ public class SettingsWindow extends javax.swing.JDialog
         lblBlackColour.setText( language.getString( "BlackColour" ) );
         lblWhiteColour.setText( language.getString( "WhiteColour" ) );
         lblMenuOpacity.setText( language.getString( "MenuOpacity" ) );
-        btnChangeFont.setText( language.getString( "ChangeFont" ) );
         btnReset.setText( language.getString( "Reset" ) );
         chkWindowModeEnabled.setText( language.getString( "WindowedModeEnabled" ) );
         lblDimensions.setText( language.getString( "Dimensions" ) );
@@ -322,7 +293,6 @@ public class SettingsWindow extends javax.swing.JDialog
         btnBlackColourChange.setPreferredSize( new Dimension( (int)( btnBlackColourChange.getPreferredSize( ).width * menuScaling ), (int)( btnBlackColourChange.getPreferredSize( ).height * menuScaling ) ) );
         btnWhiteColourChange.setPreferredSize( new Dimension( (int)( btnWhiteColourChange.getPreferredSize( ).width * menuScaling ), (int)( btnWhiteColourChange.getPreferredSize( ).height * menuScaling ) ) );
         sldMenuOpacity.setPreferredSize( new Dimension( (int)( sldMenuOpacity.getPreferredSize( ).width * menuScaling ), (int)( sldMenuOpacity.getPreferredSize( ).height * menuScaling ) ) );
-        btnChangeFont.setPreferredSize( new Dimension( (int)( btnChangeFont.getPreferredSize( ).width * menuScaling ), (int)( btnChangeFont.getPreferredSize( ).height * menuScaling ) ) );
         btnReset.setPreferredSize( new Dimension( (int)( btnReset.getPreferredSize( ).width * menuScaling ), (int)( btnReset.getPreferredSize( ).height * menuScaling ) ) );
         pnlThemeButtons.setPreferredSize( new Dimension( pnlThemeButtons.getPreferredSize( ).width, btnReset.getPreferredSize( ).height + 6 ) );
         spnWindowWidth.setPreferredSize( new Dimension( (int)( spnWindowWidth.getPreferredSize( ).width * menuScaling ), (int)( spnWindowWidth.getPreferredSize( ).height * menuScaling ) ) );
@@ -415,7 +385,6 @@ public class SettingsWindow extends javax.swing.JDialog
         lstInteractiveWindows = new javax.swing.JList();
         pnlTheme = new javax.swing.JPanel();
         pnlThemeButtons = new javax.swing.JPanel();
-        btnChangeFont = new javax.swing.JButton();
         btnReset = new javax.swing.JButton();
         lblPrimaryColour1 = new javax.swing.JLabel();
         txtPrimaryColour1 = new javax.swing.JTextField();
@@ -714,18 +683,6 @@ public class SettingsWindow extends javax.swing.JDialog
         pnlThemeButtons.setPreferredSize(new java.awt.Dimension(380, 36));
         pnlThemeButtons.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 10, 5));
 
-        btnChangeFont.setText("Change Font");
-        btnChangeFont.setMaximumSize(new java.awt.Dimension(130, 26));
-        btnChangeFont.setName(""); // NOI18N
-        btnChangeFont.setPreferredSize(new java.awt.Dimension(130, 26));
-        btnChangeFont.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                btnChangeFontActionPerformed(evt);
-            }
-        });
-        pnlThemeButtons.add(btnChangeFont);
 
         btnReset.setText("Reset");
         btnReset.setMaximumSize(new java.awt.Dimension(130, 26));
@@ -1587,7 +1544,6 @@ public class SettingsWindow extends javax.swing.JDialog
 
     private void btnCancelActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnCancelActionPerformed
     {//GEN-HEADEREND:event_btnCancelActionPerformed
-        theme = oldTheme;
         refreshTheme( );
         dispose( );
     }//GEN-LAST:event_btnCancelActionPerformed
@@ -1751,42 +1707,36 @@ public class SettingsWindow extends javax.swing.JDialog
     private void btnPrimaryColour1ChangeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnPrimaryColour1ChangeActionPerformed
     {//GEN-HEADEREND:event_btnPrimaryColour1ChangeActionPerformed
         primaryColour1 = chooseColour( primaryColour1, txtPrimaryColour1, pnlPrimaryColour1Preview, "ChooseColour" );
-        theme.setPrimary1( primaryColour1 );
-        refreshTheme( );
+         refreshTheme( );
     }//GEN-LAST:event_btnPrimaryColour1ChangeActionPerformed
 
     private void btnPrimaryColour2ChangeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnPrimaryColour2ChangeActionPerformed
     {//GEN-HEADEREND:event_btnPrimaryColour2ChangeActionPerformed
         primaryColour2 = chooseColour( primaryColour2, txtPrimaryColour2, pnlPrimaryColour2Preview, "ChooseColour" );
-        theme.setPrimary2( primaryColour2 );
-        refreshTheme( );
+         refreshTheme( );
     }//GEN-LAST:event_btnPrimaryColour2ChangeActionPerformed
 
     private void btnPrimaryColour3ChangeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnPrimaryColour3ChangeActionPerformed
     {//GEN-HEADEREND:event_btnPrimaryColour3ChangeActionPerformed
         primaryColour3 = chooseColour( primaryColour3, txtPrimaryColour3, pnlPrimaryColour3Preview, "ChooseColour" );
-        theme.setPrimary3( primaryColour3 );
-        refreshTheme( );
+         refreshTheme( );
     }//GEN-LAST:event_btnPrimaryColour3ChangeActionPerformed
 
     private void btnSecondaryColour1ChangeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnSecondaryColour1ChangeActionPerformed
     {//GEN-HEADEREND:event_btnSecondaryColour1ChangeActionPerformed
         secondaryColour1 = chooseColour( secondaryColour1, txtSecondaryColour1, pnlSecondaryColour1Preview, "ChooseColour" );
-        theme.setSecondary1( secondaryColour1 );
-        refreshTheme( );
+         refreshTheme( );
     }//GEN-LAST:event_btnSecondaryColour1ChangeActionPerformed
 
     private void btnSecondaryColour2ChangeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnSecondaryColour2ChangeActionPerformed
     {//GEN-HEADEREND:event_btnSecondaryColour2ChangeActionPerformed
         secondaryColour2 = chooseColour( secondaryColour2, txtSecondaryColour2, pnlSecondaryColour2Preview, "ChooseColour" );
-        theme.setSecondary2( secondaryColour2 );
-        refreshTheme( );
+       refreshTheme( );
     }//GEN-LAST:event_btnSecondaryColour2ChangeActionPerformed
 
     private void btnSecondaryColour3ChangeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnSecondaryColour3ChangeActionPerformed
     {//GEN-HEADEREND:event_btnSecondaryColour3ChangeActionPerformed
         secondaryColour3 = chooseColour( secondaryColour3, txtSecondaryColour3, pnlSecondaryColour3Preview, "ChooseColour" );
-        theme.setSecondary3( secondaryColour3 );
         refreshTheme( );
     }//GEN-LAST:event_btnSecondaryColour3ChangeActionPerformed
 
@@ -1799,25 +1749,9 @@ public class SettingsWindow extends javax.swing.JDialog
             else
             {
                 menuOpacity = sldMenuOpacity.getValue( ) / 100.0;
-                theme.setMenuOpacity( (int)( menuOpacity * 255 ) );
-            }
+             }
         }
     }//GEN-LAST:event_sldMenuOpacityStateChanged
-
-    private void btnChangeFontActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnChangeFontActionPerformed
-    {//GEN-HEADEREND:event_btnChangeFontActionPerformed
-        JFrame frame = (JFrame)SwingUtilities.getWindowAncestor( this );
-        NimRODFontDialog dialog = new NimRODFontDialog( frame, font );
-        dialog.pack( );
-        dialog.setLocationRelativeTo( frame );
-        dialog.setVisible( true );
-        font = dialog.getSelectedFont( );
-        if( !dialog.isCanceled( ) )
-        {
-            theme.setFont( font );
-            refreshTheme( );
-        }
-    }//GEN-LAST:event_btnChangeFontActionPerformed
 
     private void btnResetActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnResetActionPerformed
     {//GEN-HEADEREND:event_btnResetActionPerformed
@@ -1849,15 +1783,6 @@ public class SettingsWindow extends javax.swing.JDialog
         pnlWhiteColourPreview.setBackground( whiteColour );
         txtWhiteColour.setText( String.format( "#%02X%02X%02X", whiteColour.getRed( ), whiteColour.getGreen( ), whiteColour.getBlue( ) ) );
         menuOpacity = 1.0;
-        theme.setPrimary1( primaryColour1 );
-        theme.setPrimary2( primaryColour2 );
-        theme.setPrimary3( primaryColour3 );
-        theme.setSecondary1( secondaryColour1 );
-        theme.setSecondary2( secondaryColour2 );
-        theme.setSecondary3( secondaryColour3 );
-        theme.setBlack( blackColour );
-        theme.setWhite( whiteColour );
-        theme.setFont( font );
         sldMenuOpacity.setValue( (int)( menuOpacity * 100 ) );
         refreshTheme( );
     }//GEN-LAST:event_btnResetActionPerformed
@@ -1870,14 +1795,14 @@ public class SettingsWindow extends javax.swing.JDialog
     private void btnBlackColourChangeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnBlackColourChangeActionPerformed
     {//GEN-HEADEREND:event_btnBlackColourChangeActionPerformed
         blackColour = chooseColour( blackColour, txtBlackColour, pnlBlackColourPreview, "ChooseColour" );
-        theme.setBlack( blackColour );
+      //  theme.setBlack( blackColour );
         refreshTheme( );
     }//GEN-LAST:event_btnBlackColourChangeActionPerformed
 
     private void btnWhiteColourChangeActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnWhiteColourChangeActionPerformed
     {//GEN-HEADEREND:event_btnWhiteColourChangeActionPerformed
         whiteColour = chooseColour( whiteColour, txtWhiteColour, pnlWhiteColourPreview, "ChooseColour" );
-        theme.setWhite( whiteColour );
+       // theme.setWhite( whiteColour );
         refreshTheme( );
     }//GEN-LAST:event_btnWhiteColourChangeActionPerformed
 
@@ -1923,16 +1848,8 @@ public class SettingsWindow extends javax.swing.JDialog
     
     private void refreshTheme( )
     {
-        try
-        {
-            NimRODLookAndFeel.setCurrentTheme( theme );
-            UIManager.setLookAndFeel( lookAndFeel );
             SwingUtilities.updateComponentTreeUI( this );
             pack( );
-        }
-        catch( UnsupportedLookAndFeelException ex )
-        {
-        }
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -1942,7 +1859,6 @@ public class SettingsWindow extends javax.swing.JDialog
     private javax.swing.JButton btnBackgroundImageRemove;
     private javax.swing.JButton btnBlackColourChange;
     private javax.swing.JButton btnCancel;
-    private javax.swing.JButton btnChangeFont;
     private javax.swing.JButton btnDiscord;
     private javax.swing.JButton btnDone;
     private javax.swing.JButton btnPatreon;
