@@ -29,9 +29,6 @@ public class X11TranslucentWindow extends JWindow implements TranslucentWindow {
         this.init();
 
         this.panel = new JPanel() {
-            /**
-             *
-             */
             private static final long serialVersionUID = 1L;
 
             @Override
