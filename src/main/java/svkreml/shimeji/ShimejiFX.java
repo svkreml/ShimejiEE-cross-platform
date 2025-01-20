@@ -1,5 +1,7 @@
 package svkreml.shimeji;
 
+import com.group_finity.mascot.environment.Area;
+import com.group_finity.mascot.x11.X;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -17,6 +19,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
+import java.awt.*;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -35,14 +38,20 @@ public class ShimejiFX extends Application {
     private final List<ImageView> standImages = new ArrayList<>();
     private final List<ImageView> dragImages = new ArrayList<>();
     private final List<ImageView> fallImages = new ArrayList<>();
+    private final X.Display display = new X.Display();
+    private final ArrayList<Number> badStateList = new ArrayList<>();
+    private final ArrayList<Number> badTypeList = new ArrayList<>();
+    public Area activeIE = new Area();
+    public String activeIETitle = null;
     Group group = new Group();
     ImageView currentImageView = new ImageView();
     int maxX;
     int maxY;
+    X.Window activeWindow = null;
     // Environment environment = NativeFactoryImpl.getInstance().getEnvironment();
-    private int x = 1000;
+    private int x = 4000;
     int oldX = x;
-    private int y = 1000;
+    private int y = 0;
     int oldY = y;
     private int speedX = 0;
     private int speedY = 0;
@@ -53,6 +62,8 @@ public class ShimejiFX extends Application {
     private int tick = 0;
     private Stage primaryStage;
     private boolean dragged = false;
+    private int minimizedValue;
+    private int dockValue;
 
     public static void main(String[] args) {
         launch(args);
@@ -70,6 +81,18 @@ public class ShimejiFX extends Application {
 
     @Override
     public void start(Stage primaryStage) throws FileNotFoundException {
+        badStateList.add(Integer.decode(display.getAtom("_NET_WM_STATE_MODAL").toString()));
+        badStateList.add(Integer.decode(display.getAtom("_NET_WM_STATE_HIDDEN").toString()));
+        minimizedValue = Integer.decode(display.getAtom("_NET_WM_STATE_HIDDEN").toString());
+        badStateList.add(Integer.decode(display.getAtom("_NET_WM_STATE_ABOVE").toString()));
+        badTypeList.add(Integer.decode(display.getAtom("_NET_WM_WINDOW_TYPE_DOCK").toString()));
+        dockValue = Integer.decode(display.getAtom("_NET_WM_WINDOW_TYPE_DOCK").toString());
+        badTypeList.add(Integer.decode(display.getAtom("_NET_WM_WINDOW_TYPE_MENU").toString()));
+        badTypeList.add(Integer.decode(display.getAtom("_NET_WM_WINDOW_TYPE_SPLASH").toString()));
+        badTypeList.add(Integer.decode(display.getAtom("_NET_WM_WINDOW_TYPE_DIALOG").toString()));
+        badTypeList.add(Integer.decode(display.getAtom("_NET_WM_WINDOW_TYPE_DESKTOP").toString()));
+
+
         this.primaryStage = primaryStage;
         screenSize();
 
@@ -162,10 +185,10 @@ public class ShimejiFX extends Application {
 
 
             if (!dragged) {
-                if (y + primaryStage.getHeight() < maxY) {
-                    fall();
-                } else {
+                if (isAboveIE() || (y + primaryStage.getHeight() >= maxY)) {
                     move();
+                } else {
+                    fall();
                 }
             } else {
                 setSpeed();
@@ -184,13 +207,22 @@ public class ShimejiFX extends Application {
         timeline.play();
     }
 
+    private boolean isAboveIE() {
+        boolean overWindow = getActiveIE().getLeft() <= (x - primaryStage.getWidth() / 2)
+                && getActiveIE().getRight() >= (x + primaryStage.getWidth() / 2)
+                && getActiveIE().getTop() == y;
+        //  System.out.println(overWindow);
+        return overWindow;
+    }
+
     private void screenSize() {
-        Timeline timeline = new Timeline(new KeyFrame(Duration.millis(500), e -> {
+        Timeline timeline = new Timeline(new KeyFrame(Duration.millis(160), e -> {
             ObservableList<Screen> screensForRectangle = Screen.getScreensForRectangle(primaryStage.getX(), primaryStage.getY(), primaryStage.getWidth(), primaryStage.getHeight());
             Screen screen = screensForRectangle.isEmpty() ?
                     Screen.getPrimary() : screensForRectangle.get(0);
             maxX = (int) screen.getVisualBounds().getMaxX();
             maxY = (int) screen.getVisualBounds().getMaxY();
+            updateActiveIE();
             //System.out.println("maxX: " + maxX + ", maxY: " + maxY);
         }));
         timeline.setCycleCount(Timeline.INDEFINITE);
@@ -198,23 +230,37 @@ public class ShimejiFX extends Application {
     }
 
     private void fall() {
+        checkBounds();
         currentImages = fallImages;
 
-        speedX();
-        speedY();
-        x = x + speedX;
-        y = y + speedY;
-        checkBounds();
+
     }
 
     private void checkBounds() {
         if (x < 0) x = 0;
         if (y < 0) y = 0;
-        if (x > maxX - currentImages.get(currentFrameIndex).getImage().getWidth()) {
-            x = (int) (maxX - currentImages.get(currentFrameIndex).getImage().getWidth());
+        if (x > maxX - primaryStage.getWidth()) {
+            x = (int) (maxX - primaryStage.getWidth());
         }
-        if (y > maxY - currentImages.get(currentFrameIndex).getImage().getHeight()) {
-            y = (int) (maxY - currentImages.get(currentFrameIndex).getImage().getHeight());
+
+        if (getActiveIE().getLeft() <= (x - primaryStage.getWidth() / 2) && getActiveIE().getRight() >= (x + primaryStage.getWidth() / 2)
+                && (
+                        y >= getActiveIE().getTop() - speedY
+                                && y <= getActiveIE().getTop()
+        )
+        ) {
+            speedY = 0;
+            y = getActiveIE().getTop();
+            if (y < 0) y = 0;
+
+        } else if (y >= maxY - primaryStage.getHeight()) {
+            y = (int) (maxY - primaryStage.getHeight());
+
+        } else {
+            speedX();
+            speedY();
+            x = x + speedX;
+            y = y + speedY;
         }
         primaryStage.setX(x);
         primaryStage.setY(y);
@@ -259,13 +305,10 @@ public class ShimejiFX extends Application {
         speedY += 4;
     }
 
-
     private void move() {
         if (random.nextInt(100) < 5) {
             dx = 5 * (random.nextInt(3) - 1); // -1, 0, or 1
         }
-
-
 
 
         if (dx != 0) {
@@ -329,5 +372,73 @@ public class ShimejiFX extends Application {
         }
     }
 
+    private void updateActiveIE() {
+
+        try {
+            final X.Window window = display.getActiveWindow();
+            int desktop = window.getDesktop();
+            int curDesktop = display.getActiveDesktopNumber();
+            boolean badDesktop = ((desktop != curDesktop) && (desktop != -1));
+            boolean badState = checkState(window.getState());
+            boolean badType = checkType(window.getType());
+            final String title = window.getTitle();
+
+            if (title.startsWith("win")) {
+                return;
+            }
+
+            if (title.equals(primaryStage.getTitle())) {
+                return;
+            }
+
+            if (badDesktop || badType || badState) {
+                // System.out.println(title);
+                return;
+            }
+
+
+            final Rectangle windowBounds = window.getBounds();
+            activeIETitle = title;
+            Rectangle r = new Rectangle(
+                    windowBounds.x,
+                    windowBounds.y,
+                    window.getGeometry().width,
+                    window.getGeometry().height
+            );
+            Area a = new Area();
+            a.set(r);
+            a.setVisible(true);
+            activeIE = a;
+            activeWindow = window;
+
+            final Area ie = getActiveIE();
+            ie.set(r);
+            ie.setVisible(true);
+
+
+            activeIE.setVisible(activeIE.isVisible());
+            activeIE.set(activeIE.toRectangle());
+            activeIE.setTop(activeIE.getTop() - (int)primaryStage.getHeight());
+            //    System.out.println(activeIETitle);
+
+        } catch (X.X11Exception ignored) {
+        }
+    }
+
+    private boolean checkState(int state) {
+        return state == minimizedValue;
+    }
+
+    private boolean checkType(int type) {
+        return badTypeList.contains(type);
+    }
+
+    public Area getActiveIE() {
+        return activeIE;
+    }
+
+    public String getActiveIETitle() {
+        return activeIETitle;
+    }
 
 }
